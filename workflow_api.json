@@ -1,0 +1,76 @@
+{
+  "3": {
+    "inputs": {
+      "seed": 856557982294191,
+      "steps": 25,
+      "cfg": 8,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 1,
+      "model": ["4", 0],
+      "positive": ["6", 0],
+      "negative": ["7", 0],
+      "latent_image": ["15", 0]
+    },
+    "class_type": "KSampler"
+  },
+  "4": {
+    "inputs": {
+      "ckpt_name": "realvisxlV50_v50Bakedvae.ckpt"
+    },
+    "class_type": "CheckpointLoaderSimple"
+  },
+  "5": {
+    "inputs": {
+      "images": ["3", 0],
+      "vae": ["4", 2]
+    },
+    "class_type": "VAEDecode"
+  },
+  "6": {
+    "inputs": {
+      "text": "masterpiece, best quality, ultra-detailed, sharp focus, professional photo of a beautiful new object",
+      "clip": ["4", 1]
+    },
+    "class_type": "CLIPTextEncode"
+  },
+  "7": {
+    "inputs": {
+      "text": "bad art, ugly, deformed, blurry, text, watermark",
+      "clip": ["4", 1]
+    },
+    "class_type": "CLIPTextEncode"
+  },
+  "8": {
+    "inputs": {
+      "filename_prefix": "ComfyUI_Inpaint",
+      "images": ["5", 0]
+    },
+    "class_type": "SaveImage"
+  },
+  "10": {
+    "inputs": {
+      "image": "source_image.png",
+      "upload": "image"
+    },
+    "class_type": "LoadImage"
+  },
+  "14": {
+    "inputs": {
+      "image": "mask_image.png",
+      "channel": "alpha",
+      "upload": "image"
+    },
+    "class_type": "LoadImageMask"
+  },
+  "15": {
+    "inputs": {
+      "grow": 6,
+      "blur": 3,
+      "pixels": ["10", 0],
+      "vae": ["4", 2],
+      "mask": ["14", 1]
+    },
+    "class_type": "VAEEncodeForInpaint"
+  }
+}

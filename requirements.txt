@@ -1,0 +1,5 @@
+streamlit
+requests
+websocket-client
+streamlit-drawable-canvas
+Pillow
