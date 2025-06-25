@@ -1,4 +1,4 @@
-# Studio Mode for Earth (or Geospatial Canvas)
+# Earth Canvas
 
 ## The Problem
 We generate design options, as simple block massing, on Earth. While these are placed within their real-world context, visualizing those designs in a realiztic manner is slow and expensive. Traditional rendering takes days and needs specialized skills.
