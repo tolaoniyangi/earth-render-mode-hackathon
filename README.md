@@ -1,5 +1,3 @@
-# earth-render-mode-hackathon
-
 # Studio Mode for Earth (or Geospatial Canvas)
 
 ## The Problem
