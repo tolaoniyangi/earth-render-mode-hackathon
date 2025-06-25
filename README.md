@@ -26,5 +26,5 @@ We bridge conceptual 3D models with photorealism by integrating ComfyUI and geos
 
 Eventually, we could use Google Earth for data interaction and display. For now, we're just using screenshots.
 
-## Why It's Unique
-This project makes  rendering accessible for contextual architectural and urban photorealism in a simple, user-manner. We bridge readily available geospatial data with advanced generative AI to create geolocated, contextually accurate renders, not just generic images.
+## Why It Matters
+We're solving a customer pain point of making generated designs presentation-ready. This project makes  rendering accessible for contextual architectural and urban photorealism in a simple, user-manner. We bridge readily available geospatial data with advanced generative AI to create geolocated, contextually accurate renders, not just generic images.
