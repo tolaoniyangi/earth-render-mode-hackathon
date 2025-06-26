@@ -140,7 +140,7 @@ if st.session_state.active_image:
                     source_path = upload_image(source_image_bytes, f"source_{CLIENT_ID}.png")
                     mask_path = upload_image(mask_bytes, f"mask_{CLIENT_ID}.png", image_type="mask")
 
-                    images = run_pass(prompt_text, os.path.abspath(source_path), os.path.abspath(mask_path), os.path.abspath("BuildingEditv2.json"))
+                    images = run_pass(prompt_text, os.path.abspath(source_path), os.path.abspath(mask_path), os.path.abspath("BuildingEditFast.json"))
                    
                     final_image = None
                     if images:
