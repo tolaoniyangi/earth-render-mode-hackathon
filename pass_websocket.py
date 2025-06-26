@@ -7,13 +7,20 @@ import uuid
 import json
 import urllib.request
 import urllib.parse
+from PIL import Image
+import io
+import os
 
 server_address = "127.0.0.1:8188"
 client_id = str(uuid.uuid4())
 
+image_node_id = "18"
+mask_node_id = "11"
+prompt_node_id = "6"
+
 def queue_prompt(prompt):
     p = {"prompt": prompt, "client_id": client_id}
-    print(p)
+    #print(p)
     data = json.dumps(p).encode('utf-8')
     req =  urllib.request.Request("http://{}/prompt".format(server_address), data=data)
     return json.loads(urllib.request.urlopen(req).read())
@@ -29,11 +36,11 @@ def get_history(prompt_id):
         return json.loads(response.read())
 
 def upload_image(image_bytes, filename, image_type="input"):
-    try:
-        image = Image.open(io.BytesIO(image_bytes))
-        image.save(filename)
-    except:
-        return None
+    image = Image.open(image_bytes)
+    temp_path = os.path.join("/tmp", filename)
+    image.save(temp_path)
+    return temp_path
+
 
 def get_images(ws, prompt):
     prompt_id = queue_prompt(prompt)['prompt_id']
@@ -69,15 +76,13 @@ def save_images(images, output_path="./"):
     count = 0
     for node_id in images:
         for image_data in images[node_id]:
-            from PIL import Image
-            import io
             count = count + 1
             filename = f"tempoutput{count}.png"
             image = Image.open(io.BytesIO(image_data))
             image.save(output_path + filename)
 
 def run_pass(prompt_insertion, image_path, mask_path, workflow_path="./BuildingEdit.json"):
-    print(workflow_path)
+    #print(workflow_path)
     with open(workflow_path, 'r', encoding='utf-8') as file: 
       prompt_text = file.read()
 
@@ -85,18 +90,19 @@ def run_pass(prompt_insertion, image_path, mask_path, workflow_path="./BuildingE
 
   
     #set the text prompt for our positive CLIPTextEncode
-    prompt["6"]["inputs"]["text"] = prompt_insertion + prompt["6"]["inputs"]["text"]
-    print(prompt["6"]["inputs"]["text"])
+    prompt[prompt_node_id]["inputs"]["text"] = prompt_insertion + prompt[prompt_node_id]["inputs"]["text"]
+    #print(prompt["6"]["inputs"]["text"])
     #set the text prompt for our positive CLIPTextEncode
-    prompt["11"]["inputs"]["image"] = mask_path
+    prompt[mask_node_id]["inputs"]["image"] = mask_path
 
     #set the text prompt for our positive CLIPTextEncode
-    prompt["18"]["inputs"]["image"] = image_path
+    prompt[image_node_id]["inputs"]["image"] = image_path
 
     ws = websocket.WebSocket()
     ws.connect("ws://{}/ws?clientId={}".format(server_address, client_id))
     images = get_images(ws, prompt)
     ws.close() # for in case this example is used in an environment where it will be repeatedly called, like in a Gradio app. otherwise, you'll randomly receive connection timeouts
+    #(images)
     return images
 
 #print (sys.argv[0])

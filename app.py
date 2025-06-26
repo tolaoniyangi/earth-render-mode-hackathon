@@ -58,7 +58,7 @@ if "original_dims" not in st.session_state:
 
 def get_image(bytes):
     try:
-        return Image.open(bytes)
+        return Image.open(io.BytesIO(bytes))
     except:
         st.error("Error getting image.")
         return None
@@ -139,7 +139,7 @@ if st.session_state.active_image:
     with editor_col:
         canvas_result = st_canvas(
             fill_color="rgba(138, 180, 248, 0.4)",
-            stroke_width=5,
+            stroke_width=20,
             background_color="#3C4043",
             background_image=st.session_state.active_image,
             update_streamlit=True,
@@ -185,16 +185,28 @@ if st.session_state.active_image:
 
                     source_filename = f"source_{CLIENT_ID}.png"
                     mask_filename = f"mask_{CLIENT_ID}.png"
-                    upload_image(source_image_bytes, source_filename)
-                    upload_image(mask_bytes, mask_filename, image_type="mask")
+                    source_path = upload_image(source_image_bytes, source_filename)
+                    mask_path = upload_image(mask_bytes, mask_filename, image_type="mask")
 
-                    images = run_pass(prompt_text, source_filename, mask_filename, "BuildingEdit.json")
-                    if len(images) != 0:
-                        final_image = get_image(images[0])
-                        st.success("Enhancement complete!")
-                        st.session_state.active_image = final_image
-                        st.session_state.original_dims = final_image.size
-                        st.rerun()
+                    images = run_pass(prompt_text, os.path.abspath(source_path), os.path.abspath(mask_path), os.path.abspath("BuildingEditv2.json"))
+                   
+                    for node_id in images:
+                        print(node_id)
+                        for image_data in images[node_id]:
+                            print(dir(image_data))
+                            #count = count + 1
+                            #filename = f"tempoutput{count}.png"
+                            image = Image.open(io.BytesIO(image_data))
+
+                            final_image = image
+                            if final_image != None:
+                                st.success("Enhancement complete!")
+                                st.session_state.active_image = final_image
+                                st.session_state.original_dims = final_image.size
+                                st.rerun()
+                                break
+                            else:
+                                print("Image did not parse")
 
 else:
     st.info("Please upload an image using the sidebar to begin the creative process.")
