@@ -1,0 +1,1072 @@
+{
+  "4": {
+    "inputs": {
+      "ckpt_name": "realvisxlV50_v50Bakedvae.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "5": {
+    "inputs": {
+      "width": 2048,
+      "height": 2048,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "6": {
+    "inputs": {
+      "text": "Aerial view ofa neighborhood with office buildings in a (modern architectural style).\nvibrant color, cartoon, absurdres, extremely detailed, best quality, unreal engine 5, perfect composition, vibrant, rtx, hbao",
+      "clip": [
+        "24",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": "text, watermark, (octane render, render, bad photo, bad photography:1.3), (worst quality, low quality, blurry:1.2), ",
+      "clip": [
+        "24",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "37",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "11": {
+    "inputs": {
+      "image": "originalimagemask.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Mask"
+    }
+  },
+  "12": {
+    "inputs": {
+      "grow_mask_by": 15,
+      "pixels": [
+        "29",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ],
+      "mask": [
+        "19",
+        0
+      ]
+    },
+    "class_type": "VAEEncodeForInpaint",
+    "_meta": {
+      "title": "VAE Encode (for Inpainting)"
+    }
+  },
+  "16": {
+    "inputs": {
+      "strength": 2.0000000000000004,
+      "start_percent": 0,
+      "end_percent": 0.8000000000000002,
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "control_net": [
+        "17",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ],
+      "image": [
+        "20",
+        0
+      ]
+    },
+    "class_type": "ControlNetApplySD3",
+    "_meta": {
+      "title": "Apply Controlnet with VAE"
+    }
+  },
+  "17": {
+    "inputs": {
+      "control_net_name": "SDXL/control-lora-depth-rank128.safetensors"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "Load ControlNet Model"
+    }
+  },
+  "18": {
+    "inputs": {
+      "image": "originalimagetest.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "19": {
+    "inputs": {
+      "channel": "red",
+      "image": [
+        "30",
+        0
+      ]
+    },
+    "class_type": "ImageToMask",
+    "_meta": {
+      "title": "Convert Image to Mask"
+    }
+  },
+  "20": {
+    "inputs": {
+      "a": 6.283185307179586,
+      "bg_threshold": 0.1,
+      "resolution": [
+        "75",
+        0
+      ],
+      "image": [
+        "29",
+        0
+      ]
+    },
+    "class_type": "MiDaS-DepthMapPreprocessor",
+    "_meta": {
+      "title": "MiDaS Depth Map"
+    }
+  },
+  "24": {
+    "inputs": {
+      "lora_name": "BWTec_XL_V2.safetensors",
+      "strength_model": 1,
+      "strength_clip": 1,
+      "model": [
+        "40",
+        0
+      ],
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
+    }
+  },
+  "25": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 461118087502806,
+      "steps": 40,
+      "cfg": 4,
+      "sampler_name": "dpmpp_3m_sde_gpu",
+      "scheduler": "kl_optimal",
+      "start_at_step": 0,
+      "end_at_step": 10000,
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "24",
+        0
+      ],
+      "positive": [
+        "67",
+        0
+      ],
+      "negative": [
+        "67",
+        1
+      ],
+      "latent_image": [
+        "63",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Advanced)"
+    }
+  },
+  "27": {
+    "inputs": {
+      "samples": [
+        "25",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "29": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": [
+        "100",
+        0
+      ],
+      "image": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
+    }
+  },
+  "30": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": [
+        "100",
+        0
+      ],
+      "image": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
+    }
+  },
+  "31": {
+    "inputs": {
+      "pixels": [
+        "29",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Encode"
+    }
+  },
+  "34": {
+    "inputs": {
+      "samples": [
+        "37",
+        0
+      ],
+      "mask": [
+        "19",
+        0
+      ]
+    },
+    "class_type": "SetLatentNoiseMask",
+    "_meta": {
+      "title": "Set Latent Noise Mask"
+    }
+  },
+  "35": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 280280793893508,
+      "steps": 20,
+      "cfg": 9,
+      "sampler_name": "res_momentumized",
+      "scheduler": "beta",
+      "start_at_step": 0,
+      "end_at_step": 10000,
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "24",
+        0
+      ],
+      "positive": [
+        "16",
+        0
+      ],
+      "negative": [
+        "16",
+        1
+      ],
+      "latent_image": [
+        "36",
+        2
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Advanced)"
+    }
+  },
+  "36": {
+    "inputs": {
+      "total": 1,
+      "initial_value1": [
+        "31",
+        0
+      ]
+    },
+    "class_type": "easy forLoopStart",
+    "_meta": {
+      "title": "For Loop Start"
+    }
+  },
+  "37": {
+    "inputs": {
+      "flow": [
+        "36",
+        0
+      ],
+      "initial_value1": [
+        "35",
+        0
+      ]
+    },
+    "class_type": "easy forLoopEnd",
+    "_meta": {
+      "title": "For Loop End"
+    }
+  },
+  "40": {
+    "inputs": {
+      "Auto_CFG": true,
+      "patch_multiplier": 1,
+      "patch_cond": true,
+      "patch_uncond": true,
+      "light_patch": false,
+      "mute_self_input_layer_8_cond": false,
+      "mute_cross_input_layer_8_cond": false,
+      "mute_self_input_layer_8_uncond": true,
+      "mute_cross_input_layer_8_uncond": false,
+      "uncond_sigma_end": 1,
+      "bypass_layer_8_instead_of_mute": false,
+      "save_as_preset": false,
+      "preset_name": "",
+      "model": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "Automatic CFG - Excellent attention",
+    "_meta": {
+      "title": "Automatic CFG - Excellent attention"
+    }
+  },
+  "45": {
+    "inputs": {
+      "image": [
+        "73",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Get Image Size"
+    }
+  },
+  "46": {
+    "inputs": {
+      "image_crop_multi": 1,
+      "mask_crop_multi": 1,
+      "bbox_smooth_alpha": 1,
+      "mask": [
+        "48",
+        0
+      ]
+    },
+    "class_type": "easy imageCropFromMask",
+    "_meta": {
+      "title": "imageCropFromMask"
+    }
+  },
+  "48": {
+    "inputs": {
+      "padding": 40,
+      "blur": 0,
+      "mask": [
+        "19",
+        0
+      ]
+    },
+    "class_type": "MaskBoundingBox+",
+    "_meta": {
+      "title": "🔧 Mask Bounding Box"
+    }
+  },
+  "51": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": [
+        "58",
+        0
+      ],
+      "image": [
+        "73",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
+    }
+  },
+  "54": {
+    "inputs": {
+      "op": "Mul",
+      "a": [
+        "45",
+        0
+      ],
+      "b": [
+        "45",
+        1
+      ]
+    },
+    "class_type": "CM_IntBinaryOperation",
+    "_meta": {
+      "title": "IntBinaryOperation"
+    }
+  },
+  "55": {
+    "inputs": {
+      "op": "Mul",
+      "a": 1024,
+      "b": 1024
+    },
+    "class_type": "CM_IntBinaryOperation",
+    "_meta": {
+      "title": "IntBinaryOperation"
+    }
+  },
+  "58": {
+    "inputs": {
+      "op": "Sqrt",
+      "a": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "CM_FloatUnaryOperation",
+    "_meta": {
+      "title": "FloatUnaryOperation"
+    }
+  },
+  "61": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": [
+        "58",
+        0
+      ],
+      "image": [
+        "70",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
+    }
+  },
+  "63": {
+    "inputs": {
+      "grow_mask_by": 0,
+      "pixels": [
+        "61",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ],
+      "mask": [
+        "64",
+        0
+      ]
+    },
+    "class_type": "VAEEncodeForInpaint",
+    "_meta": {
+      "title": "VAE Encode (for Inpainting)"
+    }
+  },
+  "64": {
+    "inputs": {
+      "channel": "red",
+      "image": [
+        "51",
+        0
+      ]
+    },
+    "class_type": "ImageToMask",
+    "_meta": {
+      "title": "Convert Image to Mask"
+    }
+  },
+  "65": {
+    "inputs": {
+      "image_crop_multi": 1,
+      "mask_crop_multi": 1,
+      "bbox_smooth_alpha": 1,
+      "mask": [
+        "48",
+        0
+      ]
+    },
+    "class_type": "easy imageCropFromMask",
+    "_meta": {
+      "title": "imageCropFromMask"
+    }
+  },
+  "66": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": [
+        "58",
+        0
+      ],
+      "image": [
+        "71",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
+    }
+  },
+  "67": {
+    "inputs": {
+      "strength": 1.0000000000000002,
+      "start_percent": 0,
+      "end_percent": 1,
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "control_net": [
+        "17",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ],
+      "image": [
+        "66",
+        0
+      ]
+    },
+    "class_type": "ControlNetApplySD3",
+    "_meta": {
+      "title": "Apply Controlnet with VAE"
+    }
+  },
+  "70": {
+    "inputs": {
+      "width": [
+        "48",
+        4
+      ],
+      "height": [
+        "48",
+        5
+      ],
+      "position": "top-left",
+      "x_offset": [
+        "48",
+        2
+      ],
+      "y_offset": [
+        "48",
+        3
+      ],
+      "image": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "ImageCrop+",
+    "_meta": {
+      "title": "🔧 Image Crop"
+    }
+  },
+  "71": {
+    "inputs": {
+      "width": [
+        "48",
+        4
+      ],
+      "height": [
+        "48",
+        5
+      ],
+      "position": "top-left",
+      "x_offset": [
+        "48",
+        2
+      ],
+      "y_offset": [
+        "48",
+        3
+      ],
+      "image": [
+        "20",
+        0
+      ]
+    },
+    "class_type": "ImageCrop+",
+    "_meta": {
+      "title": "🔧 Image Crop"
+    }
+  },
+  "73": {
+    "inputs": {
+      "width": [
+        "48",
+        4
+      ],
+      "height": [
+        "48",
+        5
+      ],
+      "position": "top-left",
+      "x_offset": [
+        "48",
+        2
+      ],
+      "y_offset": [
+        "48",
+        3
+      ],
+      "image": [
+        "30",
+        0
+      ]
+    },
+    "class_type": "ImageCrop+",
+    "_meta": {
+      "title": "🔧 Image Crop"
+    }
+  },
+  "75": {
+    "inputs": {
+      "image": [
+        "29",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Get Image Size"
+    }
+  },
+  "80": {
+    "inputs": {
+      "width": [
+        "48",
+        4
+      ],
+      "height": [
+        "48",
+        5
+      ],
+      "position": "top-left",
+      "x_offset": [
+        "48",
+        2
+      ],
+      "y_offset": [
+        "48",
+        3
+      ],
+      "image": [
+        "29",
+        0
+      ]
+    },
+    "class_type": "ImageCrop+",
+    "_meta": {
+      "title": "🔧 Image Crop"
+    }
+  },
+  "81": {
+    "inputs": {
+      "x": 0,
+      "y": 0,
+      "resize_source": false,
+      "destination": [
+        "87",
+        0
+      ],
+      "source": [
+        "27",
+        0
+      ],
+      "mask": [
+        "64",
+        0
+      ]
+    },
+    "class_type": "ImageCompositeMasked",
+    "_meta": {
+      "title": "ImageCompositeMasked"
+    }
+  },
+  "83": {
+    "inputs": {
+      "x": 0,
+      "y": 0,
+      "offset_x": [
+        "48",
+        2
+      ],
+      "offset_y": [
+        "48",
+        3
+      ],
+      "destination": [
+        "29",
+        0
+      ],
+      "source": [
+        "88",
+        0
+      ]
+    },
+    "class_type": "ImageComposite+",
+    "_meta": {
+      "title": "🔧 Image Composite"
+    }
+  },
+  "87": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": [
+        "58",
+        0
+      ],
+      "image": [
+        "80",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
+    }
+  },
+  "88": {
+    "inputs": {
+      "upscale_method": "bicubic",
+      "scale_by": [
+        "90",
+        0
+      ],
+      "image": [
+        "81",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
+    }
+  },
+  "90": {
+    "inputs": {
+      "op": "Div",
+      "a": 1.0000000000000002,
+      "b": [
+        "58",
+        0
+      ]
+    },
+    "class_type": "CM_FloatBinaryOperation",
+    "_meta": {
+      "title": "FloatBinaryOperation"
+    }
+  },
+  "95": {
+    "inputs": {
+      "image": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Get Image Size"
+    }
+  },
+  "96": {
+    "inputs": {
+      "op": "Mul",
+      "a": [
+        "95",
+        0
+      ],
+      "b": [
+        "95",
+        1
+      ]
+    },
+    "class_type": "CM_IntBinaryOperation",
+    "_meta": {
+      "title": "IntBinaryOperation"
+    }
+  },
+  "97": {
+    "inputs": {
+      "op": "Mul",
+      "a": 1024,
+      "b": 1024
+    },
+    "class_type": "CM_IntBinaryOperation",
+    "_meta": {
+      "title": "IntBinaryOperation"
+    }
+  },
+  "100": {
+    "inputs": {
+      "op": "Sqrt",
+      "a": [
+        "105",
+        0
+      ]
+    },
+    "class_type": "CM_FloatUnaryOperation",
+    "_meta": {
+      "title": "FloatUnaryOperation"
+    }
+  },
+  "103": {
+    "inputs": {
+      "a": [
+        "96",
+        0
+      ]
+    },
+    "class_type": "CM_IntToFloat",
+    "_meta": {
+      "title": "IntToFloat"
+    }
+  },
+  "104": {
+    "inputs": {
+      "a": [
+        "97",
+        0
+      ]
+    },
+    "class_type": "CM_IntToFloat",
+    "_meta": {
+      "title": "IntToFloat"
+    }
+  },
+  "105": {
+    "inputs": {
+      "op": "Div",
+      "a": [
+        "104",
+        0
+      ],
+      "b": [
+        "103",
+        0
+      ]
+    },
+    "class_type": "CM_FloatBinaryOperation",
+    "_meta": {
+      "title": "FloatBinaryOperation"
+    }
+  },
+  "106": {
+    "inputs": {
+      "a": [
+        "54",
+        0
+      ]
+    },
+    "class_type": "CM_IntToFloat",
+    "_meta": {
+      "title": "IntToFloat"
+    }
+  },
+  "107": {
+    "inputs": {
+      "a": [
+        "55",
+        0
+      ]
+    },
+    "class_type": "CM_IntToFloat",
+    "_meta": {
+      "title": "IntToFloat"
+    }
+  },
+  "108": {
+    "inputs": {
+      "op": "Div",
+      "a": [
+        "107",
+        0
+      ],
+      "b": [
+        "106",
+        0
+      ]
+    },
+    "class_type": "CM_FloatBinaryOperation",
+    "_meta": {
+      "title": "FloatBinaryOperation"
+    }
+  },
+  "112": {
+    "inputs": {
+      "text": "549",
+      "anything": [
+        "48",
+        4
+      ]
+    },
+    "class_type": "easy showAnything",
+    "_meta": {
+      "title": "Show Any"
+    }
+  },
+  "113": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "83",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "123": {
+    "inputs": {
+      "upscale_method": "bicubic",
+      "scale_by": [
+        "90",
+        0
+      ],
+      "image": [
+        "126",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
+    }
+  },
+  "124": {
+    "inputs": {
+      "images": [
+        "125",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "125": {
+    "inputs": {
+      "x": 0,
+      "y": 0,
+      "offset_x": [
+        "48",
+        2
+      ],
+      "offset_y": [
+        "48",
+        3
+      ],
+      "destination": [
+        "8",
+        0
+      ],
+      "source": [
+        "123",
+        0
+      ]
+    },
+    "class_type": "ImageComposite+",
+    "_meta": {
+      "title": "🔧 Image Composite"
+    }
+  },
+  "126": {
+    "inputs": {
+      "x": 0,
+      "y": 0,
+      "resize_source": false,
+      "destination": [
+        "61",
+        0
+      ],
+      "source": [
+        "27",
+        0
+      ],
+      "mask": [
+        "64",
+        0
+      ]
+    },
+    "class_type": "ImageCompositeMasked",
+    "_meta": {
+      "title": "ImageCompositeMasked"
+    }
+  }
+}

@@ -8,6 +8,7 @@ import uuid
 import io
 import os
 import numpy as np
+from pass_websocket import run_pass
 
 # --- Configuration ---
 st.set_page_config(layout="wide", page_title="Earth Canvas", page_icon="🌍")
@@ -45,7 +46,7 @@ st.markdown(
 )
 
 # --- App State and Constants ---
-COMFYUI_URL = os.environ.get("COMFYUI_URL", "http://127.0.0.1:8188")
+#COMFYUI_URL = os.environ.get("COMFYUI_URL", "http://127.0.0.1:8188")
 CLIENT_ID = str(uuid.uuid4())
 MAX_CANVAS_WIDTH = 800
 
@@ -53,20 +54,6 @@ if "active_image" not in st.session_state:
     st.session_state.active_image = None
 if "original_dims" not in st.session_state:
     st.session_state.original_dims = None
-
-
-# --- ComfyUI API Interaction Functions (no changes) ---
-def queue_prompt(prompt_workflow):
-    try:
-        req = requests.post(
-            f"{COMFYUI_URL}/prompt",
-            json={"prompt": prompt_workflow, "client_id": CLIENT_ID},
-        )
-        req.raise_for_status()
-        return req.json()
-    except:
-        st.error("Error queuing prompt.")
-        return None
 
 
 def upload_image(image_bytes, filename, image_type="input"):
@@ -83,13 +70,9 @@ def upload_image(image_bytes, filename, image_type="input"):
         return None
 
 
-def get_image(filename, subfolder, folder_type):
+def get_image(bytes):
     try:
-        response = requests.get(
-            f"{COMFYUI_URL}/view?filename={filename}&subfolder={subfolder}&type={folder_type}"
-        )
-        response.raise_for_status()
-        return Image.open(io.BytesIO(response.content))
+        return Image.open(bytes)
     except:
         st.error("Error getting image.")
         return None
@@ -243,33 +226,18 @@ if st.session_state.active_image:
                     original_mask.save(mask_bytes, format="PNG")
                     mask_bytes.seek(0)
 
-                    upload_image(source_image_bytes, f"source_{CLIENT_ID}.png")
-                    upload_image(mask_bytes, f"mask_{CLIENT_ID}.png", image_type="mask")
+                    source_filename = f"source_{CLIENT_ID}.png"
+                    mask_filename = f"mask_{CLIENT_ID}.png"
+                    upload_image(source_image_bytes, source_filename)
+                    upload_image(mask_bytes, mask_filename, image_type="mask")
 
-                    prompt_workflow = WORKFLOW_TEMPLATE.copy()
-                    prompt_workflow["6"]["inputs"]["text"] = prompt_text
-                    prompt_workflow["10"]["inputs"]["image"] = f"source_{CLIENT_ID}.png"
-                    prompt_workflow["14"]["inputs"]["image"] = f"mask_{CLIENT_ID}.png"
-                    prompt_workflow["3"]["inputs"]["seed"] = int(
-                        uuid.uuid4().int & (1 << 32) - 1
-                    )
-
-                    prompt_data = queue_prompt(prompt_workflow)
-                    if prompt_data:
-                        output_history = get_final_image_from_ws()
-                        if output_history:
-                            history = output_history[prompt_data["prompt_id"]]
-                            output_data = history["outputs"]["8"]["images"][0]
-                            final_image = get_image(
-                                output_data["filename"],
-                                output_data["subfolder"],
-                                output_data["type"],
-                            )
-
-                            st.success("Enhancement complete!")
-                            st.session_state.active_image = final_image
-                            st.session_state.original_dims = final_image.size
-                            st.rerun()
+                    images = run_pass(prompt_text, source_path, mask_path, "BuildingEdit.json")
+                    if len(images) != 0:
+                        final_image = get_image(images[0])
+                        st.success("Enhancement complete!")
+                        st.session_state.active_image = final_image
+                        st.session_state.original_dims = final_image.size
+                        st.rerun()
 
 else:
     st.info("Please upload an image using the sidebar to begin the creative process.")
