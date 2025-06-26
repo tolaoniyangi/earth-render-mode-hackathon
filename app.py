@@ -8,7 +8,7 @@ import uuid
 import io
 import os
 import numpy as np
-from pass_websocket import run_pass
+from pass_websocket import run_pass, upload_image
 
 # --- Configuration ---
 st.set_page_config(layout="wide", page_title="Earth Canvas", page_icon="🌍")
@@ -56,55 +56,12 @@ if "original_dims" not in st.session_state:
     st.session_state.original_dims = None
 
 
-def upload_image(image_bytes, filename, image_type="input"):
-    try:
-        resp = requests.post(
-            f"{COMFYUI_URL}/upload/image",
-            files={"image": (filename, image_bytes, "image/png")},
-            data={"overwrite": "true", "type": image_type},
-        )
-        resp.raise_for_status()
-        return resp.json()
-    except:
-        st.error("Error uploading image.")
-        return None
-
-
 def get_image(bytes):
     try:
         return Image.open(bytes)
     except:
         st.error("Error getting image.")
         return None
-
-
-def get_history(prompt_id):
-    try:
-        with requests.get(f"{COMFYUI_URL}/history/{prompt_id}") as response:
-            response.raise_for_status()
-            return response.json()
-    except:
-        st.error("Error getting history.")
-        return None
-
-
-def get_final_image_from_ws():
-    ws_scheme = "ws" if "http://" in COMFYUI_URL else "wss"
-    ws_url = f"{ws_scheme}://{COMFYUI_URL.split('//')[1]}/ws?clientId={CLIENT_ID}"
-    ws = websocket.WebSocket()
-    ws.connect(ws_url)
-    try:
-        while True:
-            out = ws.recv()
-            if isinstance(out, str):
-                message = json.loads(out)
-                if message["type"] == "executing" and message["data"]["node"] is None:
-                    return get_history(message["data"]["prompt_id"])
-    except:
-        st.error(f"Websocket error. Is server running at {COMFYUI_URL}?")
-        return None
-    finally:
-        ws.close()
 
 
 # --- NEW: Callback function to handle the file upload ---
@@ -231,7 +188,7 @@ if st.session_state.active_image:
                     upload_image(source_image_bytes, source_filename)
                     upload_image(mask_bytes, mask_filename, image_type="mask")
 
-                    images = run_pass(prompt_text, source_path, mask_path, "BuildingEdit.json")
+                    images = run_pass(prompt_text, source_filename, mask_filename, "BuildingEdit.json")
                     if len(images) != 0:
                         final_image = get_image(images[0])
                         st.success("Enhancement complete!")

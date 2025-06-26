@@ -28,6 +28,13 @@ def get_history(prompt_id):
     with urllib.request.urlopen("http://{}/history/{}".format(server_address, prompt_id)) as response:
         return json.loads(response.read())
 
+def upload_image(image_bytes, filename, image_type="input"):
+    try:
+        image = Image.open(io.BytesIO(image_bytes))
+        image.save(filename)
+    except:
+        return None
+
 def get_images(ws, prompt):
     prompt_id = queue_prompt(prompt)['prompt_id']
     output_images = {}
