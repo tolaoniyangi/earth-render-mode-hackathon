@@ -46,11 +46,13 @@ def handle_upload():
     if st.session_state.file_uploader is not None:
         uploaded_file = st.session_state.file_uploader
         st.session_state.active_image = Image.open(uploaded_file).convert("RGB")
+        st.session_state.original_image = Image.open(uploaded_file).convert("RGB")
         st.session_state.original_dims = st.session_state.active_image.size
         # When a new image is uploaded, clear the old polygons
         st.session_state.all_polygons = []
         st.session_state.canvas_key_counter += 1
     else:
+        st.session_state.original_image = None
         st.session_state.active_image = None
         st.session_state.original_dims = None
 
@@ -134,13 +136,16 @@ if st.session_state.active_image:
                             if len(points) > 2:
                                 draw.polygon(points, fill=255)
 
+                    original_image_bytes = io.BytesIO(); st.session_state.original_image.save(original_image_bytes, format="PNG"); original_image_bytes.seek(0)
+                    
                     source_image_bytes = io.BytesIO(); st.session_state.active_image.save(source_image_bytes, format="PNG"); source_image_bytes.seek(0)
                     mask_bytes = io.BytesIO(); mask_image.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
 
+                    original_path = upload_image(original_image_bytes, f"original_{CLIENT_ID}.png")
                     source_path = upload_image(source_image_bytes, f"source_{CLIENT_ID}.png")
                     mask_path = upload_image(mask_bytes, f"mask_{CLIENT_ID}.png", image_type="mask")
 
-                    images = run_pass(prompt_text, os.path.abspath(source_path), os.path.abspath(mask_path), os.path.abspath("BuildingEditFast.json"))
+                    images = run_pass(prompt_text, os.path.abspath(source_path), os.path.abspath(mask_path), os.path.abspath(original_path), os.path.abspath("BuildingEditFast.json"))
                    
                     final_image = None
                     if images:

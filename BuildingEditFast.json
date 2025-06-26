@@ -162,7 +162,7 @@
         0
       ],
       "image": [
-        "29",
+        "152",
         0
       ]
     },
@@ -1222,7 +1222,7 @@
   "146": {
     "inputs": {
       "add_noise": "enable",
-      "noise_seed": 662341368354927,
+      "noise_seed": 341333868288246,
       "steps": 12,
       "cfg": 5,
       "sampler_name": "dpmpp_dualsde_momentumized",
@@ -1266,6 +1266,32 @@
     "class_type": "VAEDecode",
     "_meta": {
       "title": "VAE Decode"
+    }
+  },
+  "151": {
+    "inputs": {
+      "image": "source_2329d492-11da-467c-aacc-8c2c931a0253.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Original Image"
+    }
+  },
+  "152": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": [
+        "100",
+        0
+      ],
+      "image": [
+        "151",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
     }
   }
 }
