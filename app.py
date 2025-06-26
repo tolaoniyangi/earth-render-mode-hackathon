@@ -109,7 +109,7 @@ if st.session_state.active_image:
 
     with controls_col:
         with st.container(border=True):
-            prompt_text = st.text_area("Describe the desired change:", "Aerial view of office buildings in a (neoclassical architectural style), cinematic lighting, 4k, ultra-detailed.", height=125)
+            prompt_text = st.text_area("Describe the desired change:", placeholder = "Aerial view of office buildings in a (neoclassical architectural style), cinematic lighting, 4k, ultra-detailed.", height=125)
             
             c1, c2 = st.columns(2)
             render_button = c1.button("Render Design", use_container_width=True, type="primary")
