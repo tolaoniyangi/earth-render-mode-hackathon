@@ -192,7 +192,7 @@ if st.session_state.active_image:
                     source_path = upload_image(source_image_bytes, source_filename)
                     mask_path = upload_image(mask_bytes, mask_filename, image_type="mask")
 
-                    images = run_pass(prompt_text, os.path.abspath(source_path), os.path.abspath(mask_path), os.path.abspath("BuildingEditv2.json"))
+                    images = run_pass(prompt_text, os.path.abspath(source_path), os.path.abspath(mask_path), os.path.abspath("BuildingEditFast.json"))
                    
                     for node_id in images:
                         print(node_id)
