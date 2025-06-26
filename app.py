@@ -142,9 +142,10 @@ if st.session_state.active_image:
 
     with editor_col:
         canvas_result = st_canvas(
-            fill_color="rgba(138, 180, 248, 0.2)",
+            fill_color="rgba(246, 250, 6, 0.4)",
+            stroke_color="#F6FA06",
             stroke_width=5,
-            background_color="#2A6490",
+            background_color="#0F4772",
             background_image=st.session_state.active_image,
             update_streamlit=True,
             height=canvas_h,
