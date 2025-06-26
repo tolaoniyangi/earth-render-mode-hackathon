@@ -3,3 +3,6 @@ requests
 websocket-client
 streamlit-drawable-canvas
 Pillow
+transformers
+torch
+opencv-python
