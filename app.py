@@ -8,9 +8,6 @@ import uuid
 import io
 import os
 import numpy as np
-# Make sure shapely is in your requirements.txt
-from shapely.geometry import Polygon
-from shapely.ops import unary_union
 # Assuming your refactored code is in this file
 from pass_websocket import run_pass, upload_image
 
@@ -40,8 +37,8 @@ MAX_CANVAS_WIDTH = 800
 
 if "active_image" not in st.session_state: st.session_state.active_image = None
 if "original_dims" not in st.session_state: st.session_state.original_dims = None
-# --- NEW: A persistent list to store polygons that have been rendered ---
-if "rendered_polygons" not in st.session_state: st.session_state.rendered_polygons = []
+# A single persistent list to store all drawn polygon data
+if "all_polygons" not in st.session_state: st.session_state.all_polygons = []
 if "canvas_key_counter" not in st.session_state: st.session_state.canvas_key_counter = 0
 
 # --- Callback function to handle file upload ---
@@ -51,7 +48,7 @@ def handle_upload():
         st.session_state.active_image = Image.open(uploaded_file).convert("RGB")
         st.session_state.original_dims = st.session_state.active_image.size
         # When a new image is uploaded, clear the old polygons
-        st.session_state.rendered_polygons = []
+        st.session_state.all_polygons = []
         st.session_state.canvas_key_counter += 1
     else:
         st.session_state.active_image = None
@@ -66,6 +63,8 @@ try:
     with open("workflow_api.json", "r") as f: WORKFLOW_TEMPLATE = json.load(f)
 except: st.error("`workflow_api.json` not found! Please create it."); st.stop()
 
+
+# --- Sidebar for Upload and Control ---
 with st.sidebar:
     st.header("1. Upload Image 🖼️")
     with st.container(border=True):
@@ -74,6 +73,8 @@ with st.sidebar:
     st.markdown("---")
     st.info("This front-end connects to a ComfyUI backend for rendering.")
 
+
+# --- Main Image Editor Area ---
 if st.session_state.active_image:
     col_header_1, col_header_2 = st.columns([2, 1])
     with col_header_1: st.subheader("2. Highlight areas to render 🖌️")
@@ -86,17 +87,8 @@ if st.session_state.active_image:
     editor_col, controls_col = st.columns([2, 1])
 
     with editor_col:
-        st.info("Click points to create polygons. Double-click to finish a shape. Previously rendered areas are outlined.")
+        st.info("Click points to create polygons. Right-click to finish a shape. Previously rendered areas are outlined.")
         
-        # --- NEW: Prepare the initial drawing with outlines only ---
-        initial_drawing = {"objects": []}
-        for obj in st.session_state.rendered_polygons:
-            # Create a copy to modify its properties for display
-            display_obj = obj.copy()
-            display_obj["fill"] = "rgba(0,0,0,0)"  # Transparent fill
-            display_obj["stroke"] = "#F6FA06"      # Visible outline
-            initial_drawing["objects"].append(display_obj)
-            
         canvas_result = st_canvas(
             # New polygons will be filled
             fill_color="rgba(255, 255, 255, 0.5)",
@@ -108,8 +100,8 @@ if st.session_state.active_image:
             height=canvas_h,
             width=canvas_w,
             drawing_mode="polygon",
-            # Feed the "outline-only" polygons to the canvas
-            initial_drawing=initial_drawing,
+            # Feed the saved polygons back into the canvas
+            initial_drawing={"objects": st.session_state.all_polygons},
             key=f"canvas_{st.session_state.canvas_key_counter}",
         )
 
@@ -120,13 +112,13 @@ if st.session_state.active_image:
             c1, c2 = st.columns(2)
             render_button = c1.button("Render Design", use_container_width=True, type="primary")
             if c2.button("Clear All Polygons", use_container_width=True):
-                st.session_state.rendered_polygons = []
+                st.session_state.all_polygons = []
                 st.session_state.canvas_key_counter += 1
                 st.rerun()
 
         if render_button:
             if canvas_result.json_data is None or not canvas_result.json_data.get("objects"):
-                st.warning("Please draw at least one new polygon to render.")
+                st.warning("Please draw at least one polygon on the image to indicate the area to render.")
             else:
                 with st.spinner("Processing your request... This may take a moment."):
                     mask_image = Image.new("L", (original_w, original_h), 0)
@@ -134,29 +126,14 @@ if st.session_state.active_image:
                     scale_x = original_w / canvas_w
                     scale_y = original_h / canvas_h
                     
-                    shapely_polygons = []
+                    # Draw all polygons currently on the canvas to the solid mask
                     for obj in canvas_result.json_data["objects"]:
-                        # CHANGE THIS LINE
-                        if obj['type'] == 'path': # Or whatever the actual type string is for your shapes
+                        if obj['type'] == 'path': # NOTE: Polygon drawings are of type 'path'
+                            # Filter the path data to only include actual coordinate points
                             points = [(p[1] * scale_x, p[2] * scale_y) for p in obj['path'] if len(p) == 3]
                             if len(points) > 2:
-                                shapely_polygons.append(Polygon(points))
+                                draw.polygon(points, fill=255)
 
-                    if not shapely_polygons:
-                        st.warning("No valid polygons found. Ensure shapes have at least 3 points."); st.stop()
-
-                    merged_geometry = unary_union(shapely_polygons)
-
-                    # Draw the final, merged shape to the mask
-                    if merged_geometry.geom_type == 'Polygon': geoms = [merged_geometry]
-                    elif merged_geometry.geom_type == 'MultiPolygon': geoms = list(merged_geometry.geoms)
-                    else: geoms = []
-                    
-                    for poly in geoms:
-                        draw.polygon(list(poly.exterior.coords), fill=255)
-                        for interior in poly.interiors: draw.polygon(list(interior.coords), fill=0)
-
-                    # ... (rest of the code for sending to backend is the same)
                     source_image_bytes = io.BytesIO(); st.session_state.active_image.save(source_image_bytes, format="PNG"); source_image_bytes.seek(0)
                     mask_bytes = io.BytesIO(); mask_image.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
 
@@ -176,8 +153,16 @@ if st.session_state.active_image:
                         st.success("Enhancement complete!")
                         st.session_state.active_image = final_image
                         st.session_state.original_dims = final_image.size
-                        # --- KEY CHANGE: Save ALL polygons for the next pass ---
-                        st.session_state.rendered_polygons = canvas_result.json_data["objects"]
+                        
+                        # Get all polygons that were just on the canvas
+                        processed_polygons = canvas_result.json_data["objects"]
+                        # Loop through them and set their fill to transparent for display
+                        for p in processed_polygons:
+                            p['fill'] = "rgba(0,0,0,0)" # Transparent fill
+                        
+                        # Save these modified, outline-only polygons for the next run
+                        st.session_state.all_polygons = processed_polygons
+                        
                         st.session_state.canvas_key_counter += 1
                         st.rerun()
                     else:
