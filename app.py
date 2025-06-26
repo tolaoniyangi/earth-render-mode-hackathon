@@ -71,7 +71,7 @@ with st.sidebar:
     st.header("1. Upload Image 🖼️")
     with st.container(border=True):
         st.file_uploader("Upload new or replacement image.", type=["png", "jpg", "jpeg"], key="file_uploader", on_change=handle_upload)
-        if st.session_state.active_image: st.image(st.session_state.active_image, caption="Current image", use_container_width=True)
+        if st.session_state.active_image: st.image(st.session_state.original_image, caption="Current image", use_container_width=True)
     st.markdown("---")
     st.info("This front-end connects to a ComfyUI backend for rendering.")
 
