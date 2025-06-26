@@ -46,7 +46,7 @@ st.markdown(
 )
 
 # --- App State and Constants ---
-#COMFYUI_URL = os.environ.get("COMFYUI_URL", "http://127.0.0.1:8188")
+# COMFYUI_URL = os.environ.get("COMFYUI_URL", "http://127.0.0.1:8188")
 CLIENT_ID = str(uuid.uuid4())
 MAX_CANVAS_WIDTH = 800
 
@@ -54,6 +54,8 @@ if "active_image" not in st.session_state:
     st.session_state.active_image = None
 if "original_dims" not in st.session_state:
     st.session_state.original_dims = None
+if "canvas_key_counter" not in st.session_state:
+    st.session_state.canvas_key_counter = 0
 
 
 def get_image(bytes):
@@ -71,6 +73,7 @@ def handle_upload():
         uploaded_file = st.session_state.file_uploader
         st.session_state.active_image = Image.open(uploaded_file).convert("RGB")
         st.session_state.original_dims = st.session_state.active_image.size
+        st.session_state.canvas_key_counter += 1
     else:
         # This handles the case where the user clicks 'x' to clear the file
         st.session_state.active_image = None
@@ -123,6 +126,7 @@ if st.session_state.active_image:
     col_header_1, col_header_2 = st.columns([2, 1])
     with col_header_1:
         st.subheader("2. Highlight the area to render on your canvas 🖌️")
+        st.info("Draw on the canvas & right-click to complete drawing.")
     with col_header_2:
         st.subheader("3. Describe your vision ✨")
 
@@ -138,15 +142,15 @@ if st.session_state.active_image:
 
     with editor_col:
         canvas_result = st_canvas(
-            fill_color="rgba(138, 180, 248, 0.4)",
+            fill_color="rgba(138, 180, 248, 0.2)",
             stroke_width=5,
-            background_color="#3C4043",
+            background_color="#2A6490",
             background_image=st.session_state.active_image,
             update_streamlit=True,
             height=canvas_h,
             width=canvas_w,
-            drawing_mode="freedraw",
-            key="canvas",
+            drawing_mode="polygon",
+            key=f"canvas_{st.session_state.canvas_key_counter}",
         )
 
     with controls_col:
@@ -165,9 +169,7 @@ if st.session_state.active_image:
                 canvas_result.image_data is None
                 or np.sum(canvas_result.image_data[:, :, 3]) == 0
             ):
-                st.warning(
-                    "Please draw a mask on the image to indicate the area to render."
-                )
+                st.warning("Draw a mask on the image to indicate the area to render.")
             else:
                 with st.spinner("Processing your request... This may take a moment."):
                     mask_data = canvas_result.image_data[:, :, 3]
@@ -188,13 +190,16 @@ if st.session_state.active_image:
                     upload_image(source_image_bytes, source_filename)
                     upload_image(mask_bytes, mask_filename, image_type="mask")
 
-                    images = run_pass(prompt_text, source_filename, mask_filename, "BuildingEdit.json")
+                    images = run_pass(
+                        prompt_text, source_filename, mask_filename, "BuildingEdit.json"
+                    )
                     if len(images) != 0:
                         final_image = get_image(images[0])
                         st.success("Enhancement complete!")
                         st.session_state.active_image = final_image
                         st.session_state.original_dims = final_image.size
+                        st.session_state.canvas_key_counter += 1
                         st.rerun()
 
 else:
-    st.info("Please upload an image using the sidebar to begin the creative process.")
+    st.info("Upload an image using the sidebar to begin the creative process.")
