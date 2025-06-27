@@ -148,26 +148,31 @@ if st.session_state.active_image:
         st.subheader("2. Highlight the area to render on your canvas 🖌️")
         st.info("Draw on the canvas & right-click to complete drawing.")
 
-        # Display canvas size (keep aspect ratio, but limit width)
-        orig_w, orig_h = st.session_state.original_image.size
-        if orig_w > MAX_CANVAS_WIDTH:
-            disp_w, disp_h = MAX_CANVAS_WIDTH, int(MAX_CANVAS_WIDTH * (orig_h / orig_w))
-        else:
-            disp_w, disp_h = orig_w, orig_h
+    with col_header_2:
+        st.subheader("3. Describe your vision ✨")
 
-        # Show editable canvas with SAM polygons (if any)
-        st.markdown("### Polygons canvas – draw OR edit")
-        poly_mode = st.radio(
-            label="Mode:",
-            options=("Draw polygons", "SAM"),
-            horizontal=True,
-            key="polygon_edit_mode",
-        )
+    # Show editable canvas with SAM polygons (if any)
+    st.markdown("### Polygons canvas – draw OR edit")
+    poly_mode = st.radio(
+        label="Mode:",
+        options=("Draw polygons", "SAM"),
+        horizontal=True,
+        key="polygon_edit_mode",)
 
+
+    orig_w, orig_h = st.session_state.original_image.size
+    if orig_w > MAX_CANVAS_WIDTH:
+        disp_w, disp_h = MAX_CANVAS_WIDTH, int(MAX_CANVAS_WIDTH * (orig_h / orig_w))
+    else:
+        disp_w, disp_h = orig_w, orig_h
+
+    editor_col, controls_col = st.columns([2, 1])
+
+    with editor_col:
         drawing_mode_choice = "polygon" if poly_mode == "Draw polygons" else "point"
 
         editable = st_canvas(
-            fill_color="rgba(255,255,255,0.4)",
+            fill_color="rgba(255,255,6,0.6)",
             stroke_color="#F6FA06",
             stroke_width=2,
             drawing_mode=drawing_mode_choice,
@@ -223,7 +228,7 @@ if st.session_state.active_image:
                                     "top":    top,
                                     "width":  int(xs_disp.max() - xs_disp.min()),
                                     "height": int(ys_disp.max() - ys_disp.min()),
-                                    "fill":   "rgba(255,255,6,1.0)",
+                                    "fill":   "rgba(255,255,6,0.6)",
                                     "stroke": "rgba(255,255,6,1.0)",
                                     "strokeWidth": 2,
                                     "points": points,
@@ -244,18 +249,14 @@ if st.session_state.active_image:
             st.info("Click on the image to add points, then run segmentation.")
 
 
-    with col_header_2:
-        st.subheader("3. Describe your vision ✨")
-
     original_w, original_h = st.session_state.original_dims
     if original_w > MAX_CANVAS_WIDTH: canvas_w, canvas_h = MAX_CANVAS_WIDTH, int(MAX_CANVAS_WIDTH * (original_h / original_w))
     else: canvas_w, canvas_h = original_w, original_h
 
-    editor_col, controls_col = st.columns([2, 1])
 
-    with editor_col:
-        # Inform the user that polygons can be edited above.
-        st.info("Use the polygons canvas above to add or edit shapes.")
+    # with editor_col:
+    #     # Inform the user that polygons can be edited above.
+    #     st.info("Use the polygons canvas above to add or edit shapes.")
 
     with controls_col:
         with st.container(border=True):
@@ -270,11 +271,13 @@ if st.session_state.active_image:
 
         if render_button:
             
-
+            if editable.image_data is not None:
+                st.session_state.sam_mask_data = editable.image_data.copy()
             # Retrieve alpha channel from the SAM-editable canvas
             sam_alpha = None
             if "sam_mask_data" in st.session_state and st.session_state.sam_mask_data is not None:
                 sam_alpha = st.session_state.sam_mask_data[:, :, 3]
+                sam_alpha = np.where(sam_alpha > 0, 255, 0).astype(np.uint8)
 
             # Check if we have a mask to render
             has_mask = sam_alpha is not None and np.sum(sam_alpha) > 0
@@ -283,17 +286,41 @@ if st.session_state.active_image:
                 st.warning("Add points and run SAM segmentation to create a mask for rendering.")
             else:
                 with st.spinner("Processing your request... This may take a moment."):
-                    combined_alpha = sam_alpha
+                    
+                    
+                    if poly_mode == "Draw polygons":
+                        mask_image = Image.new("L", (original_w, original_h), 0)
+                        draw = ImageDraw.Draw(mask_image)
+                        scale_x = original_w / canvas_w
+                        scale_y = original_h / canvas_h
+                        
+                        # Draw all polygons currently on the canvas to the solid mask
+                        for obj in editable.json_data["objects"]:
+                            if obj['type'] == 'path': # NOTE: Polygon drawings are of type 'path'
+                                # Filter the path data to only include actual coordinate points
+                                points = [(p[1] * scale_x, p[2] * scale_y) for p in obj['path'] if len(p) == 3]
+                                if len(points) > 2:
+                                    draw.polygon(points, fill=255)
+                        mask_bytes = io.BytesIO(); mask_image.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
+                    else:
+                        combined_alpha = sam_alpha
+                        mask_pil = Image.fromarray(combined_alpha)
+                        original_mask = mask_pil.resize(
+                            st.session_state.original_dims, Image.LANCZOS
+                        )
+                        mask_bytes = io.BytesIO(); original_mask.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
 
-                    mask_pil = Image.fromarray(combined_alpha)
-                    original_mask = mask_pil.resize(
-                        st.session_state.original_dims, Image.LANCZOS
-                    )
+
+
+
+
+                  
 
                     original_image_bytes = io.BytesIO(); st.session_state.original_image.save(original_image_bytes, format="PNG"); original_image_bytes.seek(0)
                     
                     source_image_bytes = io.BytesIO(); st.session_state.active_image.save(source_image_bytes, format="PNG"); source_image_bytes.seek(0)
-                    mask_bytes = io.BytesIO(); original_mask.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
+                    
+                    #mask_bytes = io.BytesIO(); original_mask.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
 
                     original_path = upload_image(original_image_bytes, f"original_{CLIENT_ID}.png")
                     source_path = upload_image(source_image_bytes, f"source_{CLIENT_ID}.png")
