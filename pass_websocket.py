@@ -17,6 +17,7 @@ client_id = str(uuid.uuid4())
 image_node_id = "18"
 mask_node_id = "11"
 prompt_node_id = "6"
+original_image_node_id = "151"
 
 def queue_prompt(prompt):
     p = {"prompt": prompt, "client_id": client_id}
@@ -81,7 +82,7 @@ def save_images(images, output_path="./"):
             image = Image.open(io.BytesIO(image_data))
             image.save(output_path + filename)
 
-def run_pass(prompt_insertion, image_path, mask_path, workflow_path="./BuildingEdit.json"):
+def run_pass(prompt_insertion, image_path, mask_path, original_image_path, workflow_path="./BuildingEdit.json"):
     #print(workflow_path)
     with open(workflow_path, 'r', encoding='utf-8') as file: 
       prompt_text = file.read()
@@ -97,6 +98,9 @@ def run_pass(prompt_insertion, image_path, mask_path, workflow_path="./BuildingE
 
     #set the text prompt for our positive CLIPTextEncode
     prompt[image_node_id]["inputs"]["image"] = image_path
+
+    #set the text prompt for our positive CLIPTextEncode
+    prompt[original_image_node_id]["inputs"]["image"] = original_image_path
 
     ws = websocket.WebSocket()
     ws.connect("ws://{}/ws?clientId={}".format(server_address, client_id))

@@ -6,3 +6,4 @@ Pillow
 transformers
 torch
 opencv-python
+shapely

@@ -21,7 +21,7 @@
   },
   "6": {
     "inputs": {
-      "text": "absurdres, extremely detailed, best quality, unreal engine 5, perfect composition, vibrant, rtx, hbao",
+      "text": "architectural rendering, absurdres, extremely detailed, best quality, unreal engine 5, perfect composition, vibrant, rtx, hbao",
       "clip": [
         "24",
         1
@@ -162,7 +162,7 @@
         0
       ],
       "image": [
-        "29",
+        "152",
         0
       ]
     },
@@ -193,11 +193,11 @@
   "25": {
     "inputs": {
       "add_noise": "enable",
-      "noise_seed": 461118087502806,
+      "noise_seed": 461118087502807,
       "steps": 8,
       "cfg": 8,
-      "sampler_name": "euler_ancestral",
-      "scheduler": "normal",
+      "sampler_name": "dpmpp_dualsde_momentumized",
+      "scheduler": "kl_optimal",
       "start_at_step": 0,
       "end_at_step": 10000,
       "return_with_leftover_noise": "disable",
@@ -226,7 +226,7 @@
   "27": {
     "inputs": {
       "samples": [
-        "25",
+        "146",
         0
       ],
       "vae": [
@@ -309,8 +309,8 @@
     "inputs": {
       "add_noise": "enable",
       "noise_seed": 280280793893508,
-      "steps": 4,
-      "cfg": 8,
+      "steps": 6,
+      "cfg": 10,
       "sampler_name": "euler_ancestral",
       "scheduler": "normal",
       "start_at_step": 0,
@@ -1217,6 +1217,81 @@
     "class_type": "Image Resize (rgthree)",
     "_meta": {
       "title": "Image Resize (rgthree)"
+    }
+  },
+  "146": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 341333868288246,
+      "steps": 12,
+      "cfg": 5,
+      "sampler_name": "dpmpp_dualsde_momentumized",
+      "scheduler": "kl_optimal",
+      "start_at_step": 6,
+      "end_at_step": 10000,
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "24",
+        0
+      ],
+      "positive": [
+        "67",
+        0
+      ],
+      "negative": [
+        "67",
+        1
+      ],
+      "latent_image": [
+        "25",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Advanced)"
+    }
+  },
+  "148": {
+    "inputs": {
+      "samples": [
+        "25",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "151": {
+    "inputs": {
+      "image": "source_2329d492-11da-467c-aacc-8c2c931a0253.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Original Image"
+    }
+  },
+  "152": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": [
+        "100",
+        0
+      ],
+      "image": [
+        "151",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Upscale Image By"
     }
   }
 }
