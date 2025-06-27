@@ -146,7 +146,6 @@ if st.session_state.active_image:
     col_header_1, col_header_2 = st.columns([2, 1])
     with col_header_1:
         st.subheader("2. Highlight the area to render on your canvas 🖌️")
-        st.info("Draw on the canvas & right-click to complete drawing.")
 
     with col_header_2:
         st.subheader("3. Describe your vision ✨")
@@ -231,7 +230,6 @@ if st.session_state.active_image:
             st.info("Click on the image to add points, then run segmentation.")
 
         # Show editable canvas with SAM polygons (if any)
-        st.markdown("### Polygons canvas – draw OR edit")
         poly_mode = st.radio(
             label="Mode:",
             options=("Draw polygons", "Move / resize"),
