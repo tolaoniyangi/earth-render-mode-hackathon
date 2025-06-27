@@ -96,7 +96,7 @@ def handle_upload():
         st.session_state.original_image = Image.open(uploaded_file).convert("RGB")
         st.session_state.original_dims = st.session_state.active_image.size
         # When a new image is uploaded, clear the old polygons
-        st.session_state.all_polygons = []
+        st.session_state.sam_polygons = None
         st.session_state.canvas_key_counter += 1
         st.session_state.original_image = st.session_state.active_image.copy()
     else:
@@ -273,7 +273,7 @@ if st.session_state.active_image:
             c1, c2 = st.columns(2)
             render_button = c1.button("Render Design", use_container_width=True, type="primary")
             if c2.button("Clear All Polygons", use_container_width=True):
-                st.session_state.all_polygons = []
+                st.session_state.sam_polygons = None
                 st.session_state.canvas_key_counter += 1
                 st.rerun()
 
@@ -320,14 +320,8 @@ if st.session_state.active_image:
                         st.session_state.active_image = final_image
                         st.session_state.original_dims = final_image.size
                         
-                        # Get all polygons that were just on the canvas
-                        processed_polygons = canvas_result.json_data["objects"]
-                        # Loop through them and set their fill to transparent for display
-                        for p in processed_polygons:
-                            p['fill'] = "rgba(0,0,0,0)" # Transparent fill
-                        
-                        # Save these modified, outline-only polygons for the next run
-                        st.session_state.all_polygons = processed_polygons
+                        # Clear the polygons after successful render
+                        st.session_state.sam_polygons = None
                         
                         st.session_state.canvas_key_counter += 1
                         st.rerun()
