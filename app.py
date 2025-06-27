@@ -148,15 +148,19 @@ if st.session_state.active_image:
         st.subheader("2. Highlight the area to render on your canvas 🖌️")
         st.info("Draw on the canvas & right-click to complete drawing.")
 
-        # Display canvas size (keep aspect ratio, but limit width)
-        orig_w, orig_h = st.session_state.original_image.size
-        if orig_w > MAX_CANVAS_WIDTH:
-            disp_w, disp_h = MAX_CANVAS_WIDTH, int(MAX_CANVAS_WIDTH * (orig_h / orig_w))
-        else:
-            disp_w, disp_h = orig_w, orig_h
+    with col_header_2:
+        st.subheader("3. Describe your vision ✨")
 
+    orig_w, orig_h = st.session_state.original_image.size
+    if orig_w > MAX_CANVAS_WIDTH:
+        disp_w, disp_h = MAX_CANVAS_WIDTH, int(MAX_CANVAS_WIDTH * (orig_h / orig_w))
+    else:
+        disp_w, disp_h = orig_w, orig_h
+
+    editor_col, controls_col = st.columns([2, 1])
+
+    with editor_col:
         # SAM Points workflow
-        st.markdown("Click to add points for SAM segmentation.")
         point_canvas_result = st_canvas(
             fill_color="rgba(0,0,0,0)",
             stroke_color="#FF0000",
@@ -253,18 +257,14 @@ if st.session_state.active_image:
         if editable.image_data is not None:
             st.session_state.sam_mask_data = editable.image_data.copy()
 
-    with col_header_2:
-        st.subheader("3. Describe your vision ✨")
-
     original_w, original_h = st.session_state.original_dims
     if original_w > MAX_CANVAS_WIDTH: canvas_w, canvas_h = MAX_CANVAS_WIDTH, int(MAX_CANVAS_WIDTH * (original_h / original_w))
     else: canvas_w, canvas_h = original_w, original_h
 
-    editor_col, controls_col = st.columns([2, 1])
 
-    with editor_col:
-        # Inform the user that polygons can be edited above.
-        st.info("Use the polygons canvas above to add or edit shapes.")
+    # with editor_col:
+    #     # Inform the user that polygons can be edited above.
+    #     st.info("Use the polygons canvas above to add or edit shapes.")
 
     with controls_col:
         with st.container(border=True):
