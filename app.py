@@ -155,36 +155,46 @@ if st.session_state.active_image:
         else:
             disp_w, disp_h = orig_w, orig_h
 
-        # SAM Points workflow
-        st.markdown("Click to add points for SAM segmentation.")
-        point_canvas_result = st_canvas(
-            fill_color="rgba(0,0,0,0)",
-            stroke_color="#FF0000",
-            stroke_width=10,
-            background_image=st.session_state.original_image,
-            update_streamlit=True,
-            height=disp_h,
-            width=disp_w,
-            drawing_mode="point",
-            key=f"canvas_{st.session_state.canvas_key_counter}_sam",
+        # Show editable canvas with SAM polygons (if any)
+        st.markdown("### Polygons canvas – draw OR edit")
+        poly_mode = st.radio(
+            label="Mode:",
+            options=("Draw polygons", "SAM"),
+            horizontal=True,
+            key="polygon_edit_mode",
         )
 
-        user_points = []
-        if point_canvas_result.json_data:
-            for obj in point_canvas_result.json_data["objects"]:
-                if obj["type"] == "circle":
-                    x_disp = obj["left"] + obj["radius"]
-                    y_disp = obj["top"]  + obj["radius"]
-                    # Map display coords -> original image coords
-                    x_orig = int(round(x_disp * (orig_w / disp_w)))
-                    y_orig = int(round(y_disp * (orig_h / disp_h)))
-                    user_points.append([x_orig, y_orig])
+        drawing_mode_choice = "polygon" if poly_mode == "Draw polygons" else "point"
+
+        editable = st_canvas(
+            fill_color="rgba(255,255,255,0.4)",
+            stroke_color="#F6FA06",
+            stroke_width=2,
+            drawing_mode=drawing_mode_choice,
+            height=disp_h,
+            width=disp_w,
+            background_color="rgba(0,0,0,0)",
+            background_image=st.session_state.active_image,
+            initial_drawing=st.session_state.sam_polygons or {"objects": [], "background": ""},
+            key=f"canvas_{st.session_state.canvas_key_counter}_edit",
+        )
 
         # Button to run SAM segmentation
-        if user_points:
+        if poly_mode == "SAM":
+            user_points = []
             if st.button("🎯 Run SAM Segmentation", type="primary"):
+                if editable.json_data:
+                    for obj in editable.json_data["objects"]:
+                        if obj["type"] == "circle":
+                            x_disp = obj["left"] + obj["radius"]
+                            y_disp = obj["top"]  + obj["radius"]
+                            # Map display coords -> original image coords
+                            x_orig = int(round(x_disp * (orig_w / disp_w)))
+                            y_orig = int(round(y_disp * (orig_h / disp_h)))
+                            user_points.append([x_orig, y_orig])
                 with st.spinner("Running SAM segmentation..."):
                     try:
+                        print(user_points)
                         masks, _ = segment_image(st.session_state.original_image, user_points)
                         flat_masks = flatten_masks(masks)
 
@@ -220,38 +230,19 @@ if st.session_state.active_image:
                                 })
 
                         st.session_state.sam_polygons = {"objects": fabric_objects, "background": ""}
+                        print(fabric_objects)
+                        editable.json_data["objects"] = fabric_objects
 
+                        st.session_state.sam_mask_data = editable.image_data.copy()
                     except Exception as e:
                         st.warning(f"SAM segmentation failed: {e}")
+                # Store mask data for rendering
+    
+            if editable.image_data is not None:
+                st.session_state.sam_mask_data = editable.image_data.copy()
         else:
             st.info("Click on the image to add points, then run segmentation.")
 
-        # Show editable canvas with SAM polygons (if any)
-        st.markdown("### Polygons canvas – draw OR edit")
-        poly_mode = st.radio(
-            label="Mode:",
-            options=("Draw polygons", "Move / resize"),
-            horizontal=True,
-            key="polygon_edit_mode",
-        )
-
-        drawing_mode_choice = "polygon" if poly_mode == "Draw polygons" else "transform"
-
-        editable = st_canvas(
-            fill_color="rgba(0,0,0,0)",
-            stroke_color="#F6FA06",
-            stroke_width=2,
-            drawing_mode=drawing_mode_choice,
-            height=disp_h,
-            width=disp_w,
-            background_image=st.session_state.original_image,
-            initial_drawing=st.session_state.sam_polygons or {"objects": [], "background": ""},
-            key=f"canvas_{st.session_state.canvas_key_counter}_edit",
-        )
-
-        # Store mask data for rendering
-        if editable.image_data is not None:
-            st.session_state.sam_mask_data = editable.image_data.copy()
 
     with col_header_2:
         st.subheader("3. Describe your vision ✨")
@@ -278,6 +269,8 @@ if st.session_state.active_image:
                 st.rerun()
 
         if render_button:
+            
+
             # Retrieve alpha channel from the SAM-editable canvas
             sam_alpha = None
             if "sam_mask_data" in st.session_state and st.session_state.sam_mask_data is not None:
