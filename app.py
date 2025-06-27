@@ -213,8 +213,8 @@ if st.session_state.active_image:
                                     "top":    top,
                                     "width":  int(xs_disp.max() - xs_disp.min()),
                                     "height": int(ys_disp.max() - ys_disp.min()),
-                                    "fill":   "rgba(246,250,6,0.4)",
-                                    "stroke": "rgba(246,250,6,1.0)",
+                                    "fill":   "rgba(255,255,6,1.0)",
+                                    "stroke": "rgba(255,255,6,1.0)",
                                     "strokeWidth": 2,
                                     "points": points,
                                 })
@@ -316,10 +316,11 @@ if st.session_state.active_image:
                             if final_image: break
                     
                     if final_image:
+                        print("Enhance complete")
                         st.success("Enhancement complete!")
                         st.session_state.active_image = final_image
                         st.session_state.original_dims = final_image.size
-                        
+                        print("Set final image")
                         # Clear the polygons after successful render
                         st.session_state.sam_polygons = None
                         

@@ -16,7 +16,7 @@ client_id = str(uuid.uuid4())
 
 image_node_id = "18"
 mask_node_id = "11"
-prompt_node_id = "6"
+prompt_node_id = "159"
 original_image_node_id = "151"
 
 def queue_prompt(prompt):
@@ -91,7 +91,7 @@ def run_pass(prompt_insertion, image_path, mask_path, original_image_path, workf
 
   
     #set the text prompt for our positive CLIPTextEncode
-    prompt[prompt_node_id]["inputs"]["text"] = prompt_insertion + prompt[prompt_node_id]["inputs"]["text"]
+    prompt[prompt_node_id]["inputs"]["value"] = prompt_insertion
     #print(prompt["6"]["inputs"]["text"])
     #set the text prompt for our positive CLIPTextEncode
     prompt[mask_node_id]["inputs"]["image"] = mask_path

@@ -21,7 +21,10 @@
   },
   "6": {
     "inputs": {
-      "text": "architectural rendering, absurdres, extremely detailed, best quality, unreal engine 5, perfect composition, vibrant, rtx, hbao",
+      "text": [
+        "161",
+        0
+      ],
       "clip": [
         "24",
         1
@@ -406,7 +409,7 @@
   },
   "48": {
     "inputs": {
-      "padding": 40,
+      "padding": 100,
       "blur": 0,
       "mask": [
         "19",
@@ -550,7 +553,7 @@
       "start_percent": 0,
       "end_percent": 1,
       "positive": [
-        "6",
+        "157",
         0
       ],
       "negative": [
@@ -937,7 +940,7 @@
   },
   "112": {
     "inputs": {
-      "text": "624",
+      "text": "744",
       "anything": [
         "48",
         4
@@ -1045,7 +1048,7 @@
   },
   "128": {
     "inputs": {
-      "total": 4,
+      "total": 2,
       "initial_value1": [
         "127",
         0
@@ -1222,7 +1225,7 @@
   "146": {
     "inputs": {
       "add_noise": "enable",
-      "noise_seed": 341333868288246,
+      "noise_seed": 76149723594713,
       "steps": 12,
       "cfg": 5,
       "sampler_name": "dpmpp_dualsde_momentumized",
@@ -1292,6 +1295,88 @@
     "class_type": "ImageScaleBy",
     "_meta": {
       "title": "Upscale Image By"
+    }
+  },
+  "153": {
+    "inputs": {
+      "text": "aerial view, architectural rendering, absurdres, extremely detailed, best quality, unreal engine 5, perfect composition, vibrant, rtx, hbao",
+      "clip": [
+        "24",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "155": {
+    "inputs": {
+      "strength": 1,
+      "set_cond_area": "default",
+      "conditioning": [
+        "6",
+        0
+      ],
+      "mask": [
+        "64",
+        0
+      ]
+    },
+    "class_type": "ConditioningSetMask",
+    "_meta": {
+      "title": "Conditioning (Set Mask)"
+    }
+  },
+  "157": {
+    "inputs": {
+      "conditioning_1": [
+        "155",
+        0
+      ],
+      "conditioning_2": [
+        "153",
+        0
+      ]
+    },
+    "class_type": "ConditioningCombine",
+    "_meta": {
+      "title": "Conditioning (Combine)"
+    }
+  },
+  "159": {
+    "inputs": {
+      "value": "Aerial view of a vibrant mixed use neighborhood of mid-rise buildings in a variety of modern styles."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "String (Multiline)"
+    }
+  },
+  "160": {
+    "inputs": {
+      "value": "aerial view, architectural rendering, absurdres, extremely detailed, best quality, unreal engine 5, perfect composition, vibrant, rtx, hbao"
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "String (Multiline)"
+    }
+  },
+  "161": {
+    "inputs": {
+      "string_a": [
+        "159",
+        0
+      ],
+      "string_b": [
+        "160",
+        0
+      ],
+      "delimiter": ""
+    },
+    "class_type": "StringConcatenate",
+    "_meta": {
+      "title": "Concatenate"
     }
   }
 }
