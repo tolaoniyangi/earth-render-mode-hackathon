@@ -300,7 +300,7 @@ if st.session_state.active_image:
                     original_image_bytes = io.BytesIO(); st.session_state.original_image.save(original_image_bytes, format="PNG"); original_image_bytes.seek(0)
                     
                     source_image_bytes = io.BytesIO(); st.session_state.active_image.save(source_image_bytes, format="PNG"); source_image_bytes.seek(0)
-                    mask_bytes = io.BytesIO(); mask_image.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
+                    mask_bytes = io.BytesIO(); original_mask.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
 
                     original_path = upload_image(original_image_bytes, f"original_{CLIENT_ID}.png")
                     source_path = upload_image(source_image_bytes, f"source_{CLIENT_ID}.png")
