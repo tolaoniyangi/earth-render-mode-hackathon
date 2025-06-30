@@ -146,16 +146,14 @@ if st.session_state.active_image:
     col_header_1, col_header_2 = st.columns([2, 1])
     with col_header_1:
         st.subheader("2. Highlight the area to render on your canvas 🖌️")
-        st.info("Draw on the canvas & right-click to complete drawing.")
 
     with col_header_2:
         st.subheader("3. Describe your vision ✨")
 
     # Show editable canvas with SAM polygons (if any)
-    st.markdown("### Polygons canvas – draw OR edit")
     poly_mode = st.radio(
-        label="Mode:",
-        options=("Draw polygons", "SAM"),
+        label="",
+        options=("Draw polygons", "Magic Wand"),
         horizontal=True,
         key="polygon_edit_mode",)
 
@@ -185,9 +183,9 @@ if st.session_state.active_image:
         )
 
         # Button to run SAM segmentation
-        if poly_mode == "SAM":
+        if poly_mode == "Magic Wand":
             user_points = []
-            if st.button("🎯 Run SAM Segmentation", type="primary"):
+            if st.button("Run Smart Selection", type="primary"):
                 if editable.json_data:
                     for obj in editable.json_data["objects"]:
                         if obj["type"] == "circle":
@@ -245,8 +243,6 @@ if st.session_state.active_image:
     
             if editable.image_data is not None:
                 st.session_state.sam_mask_data = editable.image_data.copy()
-        else:
-            st.info("Click on the image to add points, then run segmentation.")
 
 
     original_w, original_h = st.session_state.original_dims
