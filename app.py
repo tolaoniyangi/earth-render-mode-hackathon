@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw
 import requests
 import json
 import websocket
+import time
 import uuid
 import io
 import os
@@ -11,7 +12,136 @@ import numpy as np
 # Assuming your refactored code is in this file
 from pass_websocket import run_pass, upload_image
 from segment_anything import segment_image, overlay_mask_on_image
+from sam_runner import sam2_predict
 import cv2
+
+@st.fragment
+def make_canvas():
+    #print (f"MAKECANVAS Init canvas with: {st.session_state.sam_polygons}")
+    editable = st_canvas(
+            fill_color="rgba(255,255,6,0.6)",
+            stroke_color="#F6FA06",
+            stroke_width=2,
+            drawing_mode=drawing_mode_choice,
+            height=disp_h,
+            width=disp_w,
+            background_color="rgba(0,0,0,0)",
+            background_image=st.session_state.active_image,
+            initial_drawing=st.session_state.sam_polygons or {"objects": [], "background": ""},
+            key=f"canvas_{st.session_state.canvas_key_counter}_edit",
+            update_streamlit=True,
+        )
+    dirty = False
+    if poly_mode == "Draw polygons":
+        #print(f"Draw mode")
+        if editable.json_data:
+            #print(f"Has Data for {len(editable.json_data)}")
+            fabric_objects = st.session_state.sam_polygons["objects"]
+            for obj in editable.json_data["objects"]:
+                #print(obj["type"])
+                if obj["type"] == "path" and not "final" in obj:
+                    poly = path_to_polygon(obj)
+                    fabric_objects.append(poly)
+                    dirty = True
+                    #print("Marked dirty")
+        #print(f"Done processing draw mode")
+
+    # Button to run SAM segmentation
+    if poly_mode == "Magic Wand":
+        print("RUN WAND")
+        user_points = []
+        if editable.json_data:
+            for obj in editable.json_data["objects"]:
+                if obj["type"] == "circle":
+                    print ("HAZ CIRCLE")
+                    x_disp = obj["left"] + obj["radius"]
+                    y_disp = obj["top"]  + obj["radius"]
+                    # Map display coords -> original image coords
+                    x_orig = int(round(x_disp * (active_w / disp_w)))
+                    y_orig = int(round(y_disp * (active_h / disp_h)))
+                    user_points.append([x_orig, y_orig])
+        with st.spinner("Running SAM segmentation..."):
+            try:
+                #print(user_points)
+                #masks, _ = segment_image(st.session_state.original_image, user_points)
+                #print(f'Create labels for {len(user_points)} points')
+                user_points_labels = np.full(len(user_points), 1)
+                #print(f'Points: {user_points}')
+                #print(f'Labels: {user_points_labels}')
+                start_time = time.time()
+                masks = sam2_predict(st.session_state.active_image, user_points, user_points_labels)
+                end_time = time.time()
+                print(f"Sam2.1 took {end_time - start_time}")
+                flat_masks = flatten_masks(masks)
+
+                # Build polygons from masks
+                fabric_objects = st.session_state.sam_polygons["objects"]
+                for mask in flat_masks:
+                    mask_u8 = (mask * 255).astype("uint8")
+                    cnts, _ = cv2.findContours(mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    for cnt in cnts:
+                        if cv2.contourArea(cnt) < 20:
+                            continue
+                        cnt = cnt.squeeze()
+                        xs, ys = cnt[:, 0], cnt[:, 1]
+                        xs_disp = xs * disp_w / active_w
+                        ys_disp = ys * disp_h / active_h
+
+                        left, top = int(xs_disp.min()), int(ys_disp.min())
+                        points = [{"x": int(xd - left), "y": int(yd - top)} for xd, yd in zip(xs_disp, ys_disp)]
+
+                        fabric_objects.append({
+                            "type": "polygon",
+                            "version": "5.2.4",
+                            "originX": "left",
+                            "originY": "top",
+                            "left":   left,
+                            "top":    top,
+                            "width":  int(xs_disp.max() - xs_disp.min()),
+                            "height": int(ys_disp.max() - ys_disp.min()),
+                            "fill":   "rgba(255,255,6,0.6)",
+                            "stroke": "rgba(255,255,6,1.0)",
+                            "strokeWidth": 2,
+                            "points": points,
+                        })
+                        dirty = True
+
+                st.session_state.sam_polygons = {"objects": fabric_objects, "background": ""}
+                #print(f'Fabric objects: {fabric_objects}')
+                editable.json_data["objects"] = fabric_objects
+
+            except Exception as e:
+                st.warning(f"SAM segmentation failed: {e}")
+        # Store mask data for rendering
+
+    if dirty:
+        dirty = False
+        st.session_state.canvas_key_counter += 1
+        st.session_state.sam_mask_data = editable.image_data.copy()
+        if editable.image_data is not None:
+            st.session_state.sam_mask_data = editable.image_data.copy()
+        st.rerun()
+
+def path_to_polygon(path):
+    #ratio_scale = [disp_w / orig_w, disp_h / orig_h]
+    ratio_scale = [1, 1]
+    return {
+        "type": "polygon",
+        "version": "5.2.4",
+        "originX": "center",
+        "originY": "center",
+        "left":   path["left"] * ratio_scale[0],
+        "top":    path["top"] * ratio_scale[1],
+        "width":  path["width"] * ratio_scale[0],
+        "height": path["height"] * ratio_scale[1],
+        "fill":   "rgba(255,255,6,0.6)",
+        "stroke": "rgba(255,255,6,1.0)",
+        "strokeWidth": 2,
+        "points": [{'x': point[1] * ratio_scale[0], 'y':point[2] * ratio_scale[1]} for point in path["path"]],
+    }
+
+
+
 
 def flatten_masks(masks):
     """Recursively flatten all masks to a list of 2D numpy arrays."""
@@ -85,7 +215,7 @@ if "original_dims" not in st.session_state:
 if "canvas_key_counter" not in st.session_state:
     st.session_state.canvas_key_counter = 0
 if "sam_polygons" not in st.session_state:
-    st.session_state.sam_polygons = None
+    st.session_state.sam_polygons = {"objects": [], "background": ""}
 
 
 # --- Callback function to handle file upload ---
@@ -96,7 +226,7 @@ def handle_upload():
         st.session_state.original_image = Image.open(uploaded_file).convert("RGB")
         st.session_state.original_dims = st.session_state.active_image.size
         # When a new image is uploaded, clear the old polygons
-        st.session_state.sam_polygons = None
+        st.session_state.sam_polygons = {"objects": [], "background": ""}
         st.session_state.canvas_key_counter += 1
         st.session_state.original_image = st.session_state.active_image.copy()
     else:
@@ -159,90 +289,19 @@ if st.session_state.active_image:
 
 
     orig_w, orig_h = st.session_state.original_image.size
-    if orig_w > MAX_CANVAS_WIDTH:
-        disp_w, disp_h = MAX_CANVAS_WIDTH, int(MAX_CANVAS_WIDTH * (orig_h / orig_w))
+    active_w, active_h = st.session_state.active_image.size
+    if active_w > MAX_CANVAS_WIDTH:
+        disp_w, disp_h = MAX_CANVAS_WIDTH, int(MAX_CANVAS_WIDTH * (active_h / active_w))
     else:
-        disp_w, disp_h = orig_w, orig_h
+        disp_w, disp_h = active_w, active_h
 
     editor_col, controls_col = st.columns([2, 1])
 
     with editor_col:
         drawing_mode_choice = "polygon" if poly_mode == "Draw polygons" else "point"
 
-        editable = st_canvas(
-            fill_color="rgba(255,255,6,0.6)",
-            stroke_color="#F6FA06",
-            stroke_width=2,
-            drawing_mode=drawing_mode_choice,
-            height=disp_h,
-            width=disp_w,
-            background_color="rgba(0,0,0,0)",
-            background_image=st.session_state.active_image,
-            initial_drawing=st.session_state.sam_polygons or {"objects": [], "background": ""},
-            key=f"canvas_{st.session_state.canvas_key_counter}_edit",
-        )
-
-        # Button to run SAM segmentation
-        if poly_mode == "Magic Wand":
-            user_points = []
-            if st.button("Run Smart Selection", type="primary"):
-                if editable.json_data:
-                    for obj in editable.json_data["objects"]:
-                        if obj["type"] == "circle":
-                            x_disp = obj["left"] + obj["radius"]
-                            y_disp = obj["top"]  + obj["radius"]
-                            # Map display coords -> original image coords
-                            x_orig = int(round(x_disp * (orig_w / disp_w)))
-                            y_orig = int(round(y_disp * (orig_h / disp_h)))
-                            user_points.append([x_orig, y_orig])
-                with st.spinner("Running SAM segmentation..."):
-                    try:
-                        print(user_points)
-                        masks, _ = segment_image(st.session_state.original_image, user_points)
-                        flat_masks = flatten_masks(masks)
-
-                        # Build polygons from masks
-                        fabric_objects = []
-                        for mask in flat_masks:
-                            mask_u8 = (mask * 255).astype("uint8")
-                            cnts, _ = cv2.findContours(mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                            for cnt in cnts:
-                                if cv2.contourArea(cnt) < 20:
-                                    continue
-                                cnt = cnt.squeeze()
-                                xs, ys = cnt[:, 0], cnt[:, 1]
-                                xs_disp = xs * disp_w / orig_w
-                                ys_disp = ys * disp_h / orig_h
-
-                                left, top = int(xs_disp.min()), int(ys_disp.min())
-                                points = [{"x": int(xd - left), "y": int(yd - top)} for xd, yd in zip(xs_disp, ys_disp)]
-
-                                fabric_objects.append({
-                                    "type": "polygon",
-                                    "version": "5.2.4",
-                                    "originX": "left",
-                                    "originY": "top",
-                                    "left":   left,
-                                    "top":    top,
-                                    "width":  int(xs_disp.max() - xs_disp.min()),
-                                    "height": int(ys_disp.max() - ys_disp.min()),
-                                    "fill":   "rgba(255,255,6,0.6)",
-                                    "stroke": "rgba(255,255,6,1.0)",
-                                    "strokeWidth": 2,
-                                    "points": points,
-                                })
-
-                        st.session_state.sam_polygons = {"objects": fabric_objects, "background": ""}
-                        print(fabric_objects)
-                        editable.json_data["objects"] = fabric_objects
-
-                        st.session_state.sam_mask_data = editable.image_data.copy()
-                    except Exception as e:
-                        st.warning(f"SAM segmentation failed: {e}")
-                # Store mask data for rendering
-    
-            if editable.image_data is not None:
-                st.session_state.sam_mask_data = editable.image_data.copy()
+        make_canvas()
+        
 
 
     original_w, original_h = st.session_state.original_dims
@@ -261,14 +320,14 @@ if st.session_state.active_image:
             c1, c2 = st.columns(2)
             render_button = c1.button("Render Design", use_container_width=True, type="primary")
             if c2.button("Clear All Polygons", use_container_width=True):
-                st.session_state.sam_polygons = None
+                st.session_state.sam_polygons = {"objects": [], "background": ""}
                 st.session_state.canvas_key_counter += 1
                 st.rerun()
 
         if render_button:
             
-            if editable.image_data is not None:
-                st.session_state.sam_mask_data = editable.image_data.copy()
+            #if editable.image_data is not None:
+            #    st.session_state.sam_mask_data = editable.image_data.copy()
             # Retrieve alpha channel from the SAM-editable canvas
             sam_alpha = None
             if "sam_mask_data" in st.session_state and st.session_state.sam_mask_data is not None:
@@ -282,29 +341,12 @@ if st.session_state.active_image:
                 st.warning("Add points and run SAM segmentation to create a mask for rendering.")
             else:
                 with st.spinner("Processing your request... This may take a moment."):
-                    
-                    
-                    if poly_mode == "Draw polygons":
-                        mask_image = Image.new("L", (original_w, original_h), 0)
-                        draw = ImageDraw.Draw(mask_image)
-                        scale_x = original_w / canvas_w
-                        scale_y = original_h / canvas_h
-                        
-                        # Draw all polygons currently on the canvas to the solid mask
-                        for obj in editable.json_data["objects"]:
-                            if obj['type'] == 'path': # NOTE: Polygon drawings are of type 'path'
-                                # Filter the path data to only include actual coordinate points
-                                points = [(p[1] * scale_x, p[2] * scale_y) for p in obj['path'] if len(p) == 3]
-                                if len(points) > 2:
-                                    draw.polygon(points, fill=255)
-                        mask_bytes = io.BytesIO(); mask_image.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
-                    else:
-                        combined_alpha = sam_alpha
-                        mask_pil = Image.fromarray(combined_alpha)
-                        original_mask = mask_pil.resize(
-                            st.session_state.original_dims, Image.LANCZOS
-                        )
-                        mask_bytes = io.BytesIO(); original_mask.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
+                    combined_alpha = sam_alpha
+                    mask_pil = Image.fromarray(combined_alpha)
+                    original_mask = mask_pil.resize(
+                        st.session_state.original_dims, Image.LANCZOS
+                    )
+                    mask_bytes = io.BytesIO(); original_mask.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
 
 
 
@@ -335,10 +377,11 @@ if st.session_state.active_image:
                         print("Enhance complete")
                         st.success("Enhancement complete!")
                         st.session_state.active_image = final_image
-                        st.session_state.original_dims = final_image.size
+                        #st.session_state.original_dims = final_image.size
+                        active_w, active_h = st.session_state.active_image.size
                         print("Set final image")
                         # Clear the polygons after successful render
-                        st.session_state.sam_polygons = None
+                        st.session_state.sam_polygons = {"objects": [], "background": ""}
                         
                         st.session_state.canvas_key_counter += 1
                         st.rerun()

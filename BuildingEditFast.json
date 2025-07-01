@@ -66,7 +66,7 @@
   },
   "11": {
     "inputs": {
-      "image": "mask_2329d492-11da-467c-aacc-8c2c931a0253.png"
+      "image": "/tmp/mask_4b02fa4a-d254-4879-a5fd-29aebdef0d30.png"
     },
     "class_type": "LoadImage",
     "_meta": {
@@ -136,7 +136,7 @@
   },
   "18": {
     "inputs": {
-      "image": "source_2329d492-11da-467c-aacc-8c2c931a0253.png"
+      "image": "/tmp/source_4b02fa4a-d254-4879-a5fd-29aebdef0d30.png"
     },
     "class_type": "LoadImage",
     "_meta": {
@@ -158,8 +158,8 @@
   },
   "20": {
     "inputs": {
-      "a": 6.283185307179586,
-      "bg_threshold": 0.1,
+      "a": 6.280000000000001,
+      "bg_threshold": 0.10000000000000002,
       "resolution": [
         "75",
         0
@@ -177,8 +177,8 @@
   "24": {
     "inputs": {
       "lora_name": "BWTec_XL_V2.safetensors",
-      "strength_model": 1,
-      "strength_clip": 1,
+      "strength_model": 1.0000000000000002,
+      "strength_clip": 1.0000000000000002,
       "model": [
         "40",
         0
@@ -196,11 +196,11 @@
   "25": {
     "inputs": {
       "add_noise": "enable",
-      "noise_seed": 461118087502807,
-      "steps": 8,
+      "noise_seed": 219898875685077,
+      "steps": 4,
       "cfg": 8,
-      "sampler_name": "dpmpp_dualsde_momentumized",
-      "scheduler": "kl_optimal",
+      "sampler_name": "euler",
+      "scheduler": "simple",
       "start_at_step": 0,
       "end_at_step": 10000,
       "return_with_leftover_noise": "disable",
@@ -229,7 +229,7 @@
   "27": {
     "inputs": {
       "samples": [
-        "146",
+        "25",
         0
       ],
       "vae": [
@@ -311,11 +311,11 @@
   "35": {
     "inputs": {
       "add_noise": "enable",
-      "noise_seed": 280280793893508,
-      "steps": 6,
+      "noise_seed": 853492352256231,
+      "steps": 3,
       "cfg": 10,
-      "sampler_name": "euler_ancestral",
-      "scheduler": "normal",
+      "sampler_name": "euler",
+      "scheduler": "simple",
       "start_at_step": 0,
       "end_at_step": 10000,
       "return_with_leftover_noise": "disable",
@@ -940,7 +940,7 @@
   },
   "112": {
     "inputs": {
-      "text": "744",
+      "text": "607",
       "anything": [
         "48",
         4
@@ -1222,39 +1222,6 @@
       "title": "Image Resize (rgthree)"
     }
   },
-  "146": {
-    "inputs": {
-      "add_noise": "enable",
-      "noise_seed": 76149723594713,
-      "steps": 12,
-      "cfg": 5,
-      "sampler_name": "dpmpp_dualsde_momentumized",
-      "scheduler": "kl_optimal",
-      "start_at_step": 6,
-      "end_at_step": 10000,
-      "return_with_leftover_noise": "disable",
-      "model": [
-        "24",
-        0
-      ],
-      "positive": [
-        "67",
-        0
-      ],
-      "negative": [
-        "67",
-        1
-      ],
-      "latent_image": [
-        "25",
-        0
-      ]
-    },
-    "class_type": "KSamplerAdvanced",
-    "_meta": {
-      "title": "KSampler (Advanced)"
-    }
-  },
   "148": {
     "inputs": {
       "samples": [
@@ -1273,7 +1240,7 @@
   },
   "151": {
     "inputs": {
-      "image": "source_2329d492-11da-467c-aacc-8c2c931a0253.png"
+      "image": "/tmp/original_4b02fa4a-d254-4879-a5fd-29aebdef0d30.png"
     },
     "class_type": "LoadImage",
     "_meta": {
@@ -1312,7 +1279,7 @@
   },
   "155": {
     "inputs": {
-      "strength": 1,
+      "strength": 1.0000000000000002,
       "set_cond_area": "default",
       "conditioning": [
         "6",
@@ -1346,7 +1313,7 @@
   },
   "159": {
     "inputs": {
-      "value": "Aerial view of a vibrant mixed use neighborhood of mid-rise buildings in a variety of modern styles."
+      "value": "Aerial view of urban midrise residental buildings in a (gothic revival architectural style:1.4).  afternoon. "
     },
     "class_type": "PrimitiveStringMultiline",
     "_meta": {
