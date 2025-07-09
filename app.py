@@ -9,11 +9,12 @@ import uuid
 import io
 import os
 import numpy as np
-# Assuming your refactored code is in this file
 from pass_websocket import run_pass, upload_image
 from segment_anything import segment_image, overlay_mask_on_image
 from sam_runner import sam2_predict
 import cv2
+from io import BytesIO
+
 
 @st.fragment
 def make_canvas():
@@ -248,22 +249,27 @@ except: st.error("`workflow_api.json` not found! Please create it."); st.stop()
 with st.sidebar:
     st.header("1. Upload Image 🖼️")
     with st.container(border=True):
-        # --- CHANGE: Using the on_change callback pattern ---
         st.file_uploader(
             "Upload new or replacement image.",
             type=["png", "jpg", "jpeg"],
-            key="file_uploader",  # A static key is better for callbacks
-            on_change=handle_upload,  # This is the key change!
+            key="file_uploader",
+            on_change=handle_upload,
         )
+        # Todo(Tola): fix download
+        # buf = BytesIO()
+        # st.image.save(buf, format="JPEG")
+        # byte_im = buf.getvalue()
+        # img = st.session_state.original_image
+        # btn = st.download_button(
+        #     label="Download image",
+        #     data=img,
+        #     file_name="imagename.png",
+        #     mime="image/png")
 
-        # --- CHANGE: Display logic is now separate from upload logic ---
-        # It reads from session_state, which is set by the callback.
-        # This prevents the duplication issue.
         if st.session_state.active_image:
-            # (No SAM segmentation or mask display in the sidebar)
             st.image(
-                st.session_state.active_image,
-                caption="Current image",
+                st.session_state.original_image,
+                caption="Input image",
                 use_container_width=True,
             )
 
