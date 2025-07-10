@@ -48,12 +48,10 @@ def make_canvas():
 
     # Button to run SAM segmentation
     if poly_mode == "Magic Wand":
-        print("RUN WAND")
         user_points = []
         if editable.json_data:
             for obj in editable.json_data["objects"]:
                 if obj["type"] == "circle":
-                    print ("HAZ CIRCLE")
                     x_disp = obj["left"] + obj["radius"]
                     y_disp = obj["top"]  + obj["radius"]
                     # Map display coords -> original image coords
@@ -117,10 +115,10 @@ def make_canvas():
     if dirty:
         dirty = False
         st.session_state.canvas_key_counter += 1
-        st.session_state.sam_mask_data = editable.image_data.copy()
-        if editable.image_data is not None:
-            st.session_state.sam_mask_data = editable.image_data.copy()
         st.rerun()
+    if editable.image_data is not None:
+        print(f"Nonzero pixels: {np.count_nonzero(editable.image_data)}")
+        st.session_state.sam_mask_data = editable.image_data.copy()
 
 def path_to_polygon(path):
     #ratio_scale = [disp_w / orig_w, disp_h / orig_h]
@@ -331,8 +329,11 @@ if st.session_state.active_image:
             # Retrieve alpha channel from the SAM-editable canvas
             sam_alpha = None
             if "sam_mask_data" in st.session_state and st.session_state.sam_mask_data is not None:
+#                sam_alpha = editable.image_data.copy()[:, :, 3]
+                st.image(st.session_state.sam_mask_data)
                 sam_alpha = st.session_state.sam_mask_data[:, :, 3]
                 sam_alpha = np.where(sam_alpha > 0, 255, 0).astype(np.uint8)
+                print(f"Alpha nonzero: {np.count_nonzero(sam_alpha)}")
 
             # Check if we have a mask to render
             has_mask = sam_alpha is not None and np.sum(sam_alpha) > 0
@@ -344,7 +345,7 @@ if st.session_state.active_image:
                     combined_alpha = sam_alpha
                     mask_pil = Image.fromarray(combined_alpha)
                     original_mask = mask_pil.resize(
-                        st.session_state.original_dims, Image.LANCZOS
+                        st.session_state.active_image.size, Image.LANCZOS
                     )
                     mask_bytes = io.BytesIO(); original_mask.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
 
@@ -353,6 +354,9 @@ if st.session_state.active_image:
 
 
                   
+                    #print(f"Original image dims {st.session_state.original_image.ndim}")
+                    #print(f"Active image dims {st.session_state.original_image.ndim}")
+                    #print(f"Mask image dims {st.session_state.original_image.ndim}")
 
                     original_image_bytes = io.BytesIO(); st.session_state.original_image.save(original_image_bytes, format="PNG"); original_image_bytes.seek(0)
                     
