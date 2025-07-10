@@ -18,7 +18,6 @@ from io import BytesIO
 
 @st.fragment
 def make_canvas():
-    #print (f"MAKECANVAS Init canvas with: {st.session_state.sam_polygons}")
     editable = st_canvas(
             fill_color="rgba(255,255,6,0.6)",
             stroke_color="#F6FA06",
@@ -34,18 +33,13 @@ def make_canvas():
         )
     dirty = False
     if poly_mode == "Draw polygons":
-        #print(f"Draw mode")
         if editable.json_data:
-            #print(f"Has Data for {len(editable.json_data)}")
             fabric_objects = st.session_state.sam_polygons["objects"]
             for obj in editable.json_data["objects"]:
-                #print(obj["type"])
                 if obj["type"] == "path" and not "final" in obj:
                     poly = path_to_polygon(obj)
                     fabric_objects.append(poly)
                     dirty = True
-                    #print("Marked dirty")
-        #print(f"Done processing draw mode")
 
     # Button to run SAM segmentation
     if poly_mode == "Magic Wand":
@@ -61,12 +55,7 @@ def make_canvas():
                     user_points.append([x_orig, y_orig])
         with st.spinner("Running SAM segmentation..."):
             try:
-                #print(user_points)
-                #masks, _ = segment_image(st.session_state.original_image, user_points)
-                #print(f'Create labels for {len(user_points)} points')
                 user_points_labels = np.full(len(user_points), 1)
-                #print(f'Points: {user_points}')
-                #print(f'Labels: {user_points_labels}')
                 start_time = time.time()
                 masks = sam2_predict(st.session_state.active_image, user_points, user_points_labels)
                 end_time = time.time()
@@ -106,7 +95,6 @@ def make_canvas():
                         dirty = True
 
                 st.session_state.sam_polygons = {"objects": fabric_objects, "background": ""}
-                #print(f'Fabric objects: {fabric_objects}')
                 editable.json_data["objects"] = fabric_objects
 
             except Exception as e:
@@ -118,7 +106,6 @@ def make_canvas():
         st.session_state.canvas_key_counter += 1
         st.rerun()
     if editable.image_data is not None:
-        print(f"Nonzero pixels: {np.count_nonzero(editable.image_data)}")
         st.session_state.sam_mask_data = editable.image_data.copy()
 
 def path_to_polygon(path):
@@ -339,7 +326,6 @@ if st.session_state.active_image:
                 st.image(st.session_state.sam_mask_data)
                 sam_alpha = st.session_state.sam_mask_data[:, :, 3]
                 sam_alpha = np.where(sam_alpha > 0, 255, 0).astype(np.uint8)
-                print(f"Alpha nonzero: {np.count_nonzero(sam_alpha)}")
 
             # Check if we have a mask to render
             has_mask = sam_alpha is not None and np.sum(sam_alpha) > 0
@@ -355,14 +341,6 @@ if st.session_state.active_image:
                     )
                     mask_bytes = io.BytesIO(); original_mask.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
 
-
-
-
-
-                  
-                    #print(f"Original image dims {st.session_state.original_image.ndim}")
-                    #print(f"Active image dims {st.session_state.original_image.ndim}")
-                    #print(f"Mask image dims {st.session_state.original_image.ndim}")
 
                     original_image_bytes = io.BytesIO(); st.session_state.original_image.save(original_image_bytes, format="PNG"); original_image_bytes.seek(0)
                     
