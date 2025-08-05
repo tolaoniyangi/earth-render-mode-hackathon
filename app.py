@@ -19,18 +19,19 @@ from io import BytesIO
 @st.fragment
 def make_canvas():
     editable = st_canvas(
-            fill_color="rgba(255,255,6,0.6)",
-            stroke_color="#F6FA06",
-            stroke_width=2,
-            drawing_mode=drawing_mode_choice,
-            height=disp_h,
-            width=disp_w,
-            background_color="rgba(0,0,0,0)",
-            background_image=st.session_state.active_image,
-            initial_drawing=st.session_state.sam_polygons or {"objects": [], "background": ""},
-            key=f"canvas_{st.session_state.canvas_key_counter}_edit",
-            update_streamlit=True,
-        )
+        fill_color="rgba(255,255,6,0.6)",
+        stroke_color="#F6FA06",
+        stroke_width=2,
+        drawing_mode=drawing_mode_choice,
+        height=disp_h,
+        width=disp_w,
+        background_color="rgba(0,0,0,0)",
+        background_image=st.session_state.active_image,
+        initial_drawing=st.session_state.sam_polygons
+        or {"objects": [], "background": ""},
+        key=f"canvas_{st.session_state.canvas_key_counter}_edit",
+        update_streamlit=True,
+    )
     dirty = False
     if poly_mode == "Draw polygons":
         if editable.json_data:
@@ -48,7 +49,7 @@ def make_canvas():
             for obj in editable.json_data["objects"]:
                 if obj["type"] == "circle":
                     x_disp = obj["left"] + obj["radius"]
-                    y_disp = obj["top"]  + obj["radius"]
+                    y_disp = obj["top"] + obj["radius"]
                     # Map display coords -> original image coords
                     x_orig = int(round(x_disp * (active_w / disp_w)))
                     y_orig = int(round(y_disp * (active_h / disp_h)))
@@ -57,7 +58,9 @@ def make_canvas():
             try:
                 user_points_labels = np.full(len(user_points), 1)
                 start_time = time.time()
-                masks = sam2_predict(st.session_state.active_image, user_points, user_points_labels)
+                masks = sam2_predict(
+                    st.session_state.active_image, user_points, user_points_labels
+                )
                 end_time = time.time()
                 print(f"Sam2.1 took {end_time - start_time}")
                 flat_masks = flatten_masks(masks)
@@ -66,7 +69,9 @@ def make_canvas():
                 fabric_objects = st.session_state.sam_polygons["objects"]
                 for mask in flat_masks:
                     mask_u8 = (mask * 255).astype("uint8")
-                    cnts, _ = cv2.findContours(mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    cnts, _ = cv2.findContours(
+                        mask_u8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+                    )
                     for cnt in cnts:
                         if cv2.contourArea(cnt) < 20:
                             continue
@@ -76,25 +81,33 @@ def make_canvas():
                         ys_disp = ys * disp_h / active_h
 
                         left, top = int(xs_disp.min()), int(ys_disp.min())
-                        points = [{"x": int(xd - left), "y": int(yd - top)} for xd, yd in zip(xs_disp, ys_disp)]
+                        points = [
+                            {"x": int(xd - left), "y": int(yd - top)}
+                            for xd, yd in zip(xs_disp, ys_disp)
+                        ]
 
-                        fabric_objects.append({
-                            "type": "polygon",
-                            "version": "5.2.4",
-                            "originX": "left",
-                            "originY": "top",
-                            "left":   left,
-                            "top":    top,
-                            "width":  int(xs_disp.max() - xs_disp.min()),
-                            "height": int(ys_disp.max() - ys_disp.min()),
-                            "fill":   "rgba(255,255,6,0.6)",
-                            "stroke": "rgba(255,255,6,1.0)",
-                            "strokeWidth": 2,
-                            "points": points,
-                        })
+                        fabric_objects.append(
+                            {
+                                "type": "polygon",
+                                "version": "5.2.4",
+                                "originX": "left",
+                                "originY": "top",
+                                "left": left,
+                                "top": top,
+                                "width": int(xs_disp.max() - xs_disp.min()),
+                                "height": int(ys_disp.max() - ys_disp.min()),
+                                "fill": "rgba(255,255,6,0.6)",
+                                "stroke": "rgba(255,255,6,1.0)",
+                                "strokeWidth": 2,
+                                "points": points,
+                            }
+                        )
                         dirty = True
 
-                st.session_state.sam_polygons = {"objects": fabric_objects, "background": ""}
+                st.session_state.sam_polygons = {
+                    "objects": fabric_objects,
+                    "background": "",
+                }
                 editable.json_data["objects"] = fabric_objects
 
             except Exception as e:
@@ -108,25 +121,27 @@ def make_canvas():
     if editable.image_data is not None:
         st.session_state.sam_mask_data = editable.image_data.copy()
 
+
 def path_to_polygon(path):
-    #ratio_scale = [disp_w / orig_w, disp_h / orig_h]
+    # ratio_scale = [disp_w / orig_w, disp_h / orig_h]
     ratio_scale = [1, 1]
     return {
         "type": "polygon",
         "version": "5.2.4",
         "originX": "center",
         "originY": "center",
-        "left":   path["left"] * ratio_scale[0],
-        "top":    path["top"] * ratio_scale[1],
-        "width":  path["width"] * ratio_scale[0],
+        "left": path["left"] * ratio_scale[0],
+        "top": path["top"] * ratio_scale[1],
+        "width": path["width"] * ratio_scale[0],
         "height": path["height"] * ratio_scale[1],
-        "fill":   "rgba(255,255,6,0.6)",
+        "fill": "rgba(255,255,6,0.6)",
         "stroke": "rgba(255,255,6,1.0)",
         "strokeWidth": 2,
-        "points": [{'x': point[1] * ratio_scale[0], 'y':point[2] * ratio_scale[1]} for point in path["path"]],
+        "points": [
+            {"x": point[1] * ratio_scale[0], "y": point[2] * ratio_scale[1]}
+            for point in path["path"]
+        ],
     }
-
-
 
 
 def flatten_masks(masks):
@@ -147,6 +162,7 @@ def flatten_masks(masks):
         flat.append(arr)
     return flat
 
+
 def draw_mask_polygons_on_image(image, mask_np, color=(246, 250, 6), alpha=0.5):
     """
     Draws mask polygons on the image.
@@ -157,9 +173,11 @@ def draw_mask_polygons_on_image(image, mask_np, color=(246, 250, 6), alpha=0.5):
     Returns: PIL.Image with polygons overlaid
     """
     # Convert mask to uint8
-    mask_uint8 = (mask_np * 255).astype('uint8')
+    mask_uint8 = (mask_np * 255).astype("uint8")
     # Find contours
-    contours, _ = cv2.findContours(mask_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(
+        mask_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
     # Convert PIL image to OpenCV format
     img_cv = np.array(image).copy()
     overlay = img_cv.copy()
@@ -170,10 +188,8 @@ def draw_mask_polygons_on_image(image, mask_np, color=(246, 250, 6), alpha=0.5):
     # Convert back to PIL
     return Image.fromarray(img_cv)
 
-# --- Configuration ---
-st.set_page_config(layout="wide", page_title="Earth Canvas", page_icon="🌍")
 
-# --- CSS Injection ---
+st.set_page_config(layout="wide", page_title="Earth Canvas", page_icon="🌍")
 st.markdown(
     """
     <style>
@@ -196,6 +212,8 @@ MAX_CANVAS_WIDTH = 800
 
 if "active_image" not in st.session_state:
     st.session_state.active_image = None
+if "original_image" not in st.session_state:
+    st.session_state.original_image = None
 if "original_dims" not in st.session_state:
     st.session_state.original_dims = None
 if "canvas_key_counter" not in st.session_state:
@@ -209,25 +227,43 @@ def handle_upload():
     if st.session_state.file_uploader is not None:
         uploaded_file = st.session_state.file_uploader
         st.session_state.active_image = Image.open(uploaded_file).convert("RGB")
-        st.session_state.original_image = Image.open(uploaded_file).convert("RGB")
         st.session_state.original_dims = st.session_state.active_image.size
         # When a new image is uploaded, clear the old polygons
         st.session_state.sam_polygons = {"objects": [], "background": ""}
         st.session_state.canvas_key_counter += 1
-        st.session_state.original_image = st.session_state.active_image.copy()
     else:
-        st.session_state.original_image = None
         st.session_state.active_image = None
         st.session_state.original_dims = None
+    st.session_state.original_image = st.session_state.active_image.copy()
+
 
 # --- Streamlit UI ---
 st.title("🌍🎨 Earth Canvas")
 with st.container(border=True):
-    st.markdown("Transform your generated designs into photorealistic renders in three simple steps!")
+    st.markdown(
+        "Transform your generated designs into photorealistic renders in three simple steps!"
+    )
 
 try:
-    with open("workflow_api.json", "r") as f: WORKFLOW_TEMPLATE = json.load(f)
-except: st.error("`workflow_api.json` not found! Please create it."); st.stop()
+    with open("workflow_api.json", "r") as f:
+        WORKFLOW_TEMPLATE = json.load(f)
+except:
+    st.error("`workflow_api.json` not found! Please create it.")
+    st.stop()
+
+
+def fetch_image_bytes(image):
+    try:
+        if image is None:
+            st.warning("No image available to download.")
+            return
+
+        buf = BytesIO()
+        image.save(buf, format="JPEG")
+        byte_im = buf.getvalue()
+        return byte_im
+    except Exception as e:
+        st.error(f"An error occurred during download: {e}")
 
 
 # --- Sidebar for Upload and Control ---
@@ -240,16 +276,6 @@ with st.sidebar:
             key="file_uploader",
             on_change=handle_upload,
         )
-        # Todo(Tola): fix download
-        # buf = BytesIO()
-        # st.image.save(buf, format="JPEG")
-        # byte_im = buf.getvalue()
-        # img = st.session_state.original_image
-        # btn = st.download_button(
-        #     label="Download image",
-        #     data=img,
-        #     file_name="imagename.png",
-        #     mime="image/png")
 
         if st.session_state.active_image:
             st.image(
@@ -259,7 +285,7 @@ with st.sidebar:
             )
 
     st.markdown("---")
-    st.info("This front-end connects to a ComfyUI backend for rendering.")
+    # st.info("This front-end connects to a ComfyUI backend for rendering.")
 
 
 # --- Main Image Editor Area ---
@@ -276,8 +302,8 @@ if st.session_state.active_image:
         label="",
         options=("Draw polygons", "Magic Wand"),
         horizontal=True,
-        key="polygon_edit_mode",)
-
+        key="polygon_edit_mode",
+    )
 
     orig_w, orig_h = st.session_state.original_image.size
     active_w, active_h = st.session_state.active_image.size
@@ -292,37 +318,50 @@ if st.session_state.active_image:
         drawing_mode_choice = "polygon" if poly_mode == "Draw polygons" else "point"
 
         make_canvas()
-        
-
 
     original_w, original_h = st.session_state.original_dims
-    if original_w > MAX_CANVAS_WIDTH: canvas_w, canvas_h = MAX_CANVAS_WIDTH, int(MAX_CANVAS_WIDTH * (original_h / original_w))
-    else: canvas_w, canvas_h = original_w, original_h
-
-
-    # with editor_col:
-    #     # Inform the user that polygons can be edited above.
-    #     st.info("Use the polygons canvas above to add or edit shapes.")
+    if original_w > MAX_CANVAS_WIDTH:
+        canvas_w, canvas_h = MAX_CANVAS_WIDTH, int(
+            MAX_CANVAS_WIDTH * (original_h / original_w)
+        )
+    else:
+        canvas_w, canvas_h = original_w, original_h
 
     with controls_col:
         with st.container(border=True):
-            prompt_text = st.text_area("Describe the desired change:", placeholder = "Aerial view of office buildings in a (neoclassical architectural style), cinematic lighting, 4k, ultra-detailed.", height=125)
-            
+            prompt_text = st.text_area(
+                "Describe the desired change:",
+                placeholder="Aerial view of office buildings in a (neoclassical architectural style), cinematic lighting, 4k, ultra-detailed.",
+                height=125,
+            )
+
             c1, c2 = st.columns(2)
-            render_button = c1.button("Render Design", use_container_width=True, type="primary")
+            render_button = c1.button(
+                "Render Design", use_container_width=True, type="primary"
+            )
             if c2.button("Clear All Polygons", use_container_width=True):
                 st.session_state.sam_polygons = {"objects": [], "background": ""}
                 st.session_state.canvas_key_counter += 1
                 st.rerun()
 
+            byte_im = fetch_image_bytes(st.session_state.original_image)
+            download_button = st.download_button(
+                label="Download Image",
+                data=byte_im,
+                file_name="rendered_image.jpg",
+                mime="image/jpeg",
+            )
         if render_button:
-            
-            #if editable.image_data is not None:
+
+            # if editable.image_data is not None:
             #    st.session_state.sam_mask_data = editable.image_data.copy()
             # Retrieve alpha channel from the SAM-editable canvas
             sam_alpha = None
-            if "sam_mask_data" in st.session_state and st.session_state.sam_mask_data is not None:
-#                sam_alpha = editable.image_data.copy()[:, :, 3]
+            if (
+                "sam_mask_data" in st.session_state
+                and st.session_state.sam_mask_data is not None
+            ):
+                #                sam_alpha = editable.image_data.copy()[:, :, 3]
                 st.image(st.session_state.sam_mask_data)
                 sam_alpha = st.session_state.sam_mask_data[:, :, 3]
                 sam_alpha = np.where(sam_alpha > 0, 255, 0).astype(np.uint8)
@@ -331,7 +370,9 @@ if st.session_state.active_image:
             has_mask = sam_alpha is not None and np.sum(sam_alpha) > 0
 
             if not has_mask:
-                st.warning("Add points and run SAM segmentation to create a mask for rendering.")
+                st.warning(
+                    "Add points and run SAM segmentation to create a mask for rendering."
+                )
             else:
                 with st.spinner("Processing your request... This may take a moment."):
                     combined_alpha = sam_alpha
@@ -339,43 +380,65 @@ if st.session_state.active_image:
                     original_mask = mask_pil.resize(
                         st.session_state.active_image.size, Image.LANCZOS
                     )
-                    mask_bytes = io.BytesIO(); original_mask.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
+                    mask_bytes = io.BytesIO()
+                    original_mask.save(mask_bytes, format="PNG")
+                    mask_bytes.seek(0)
 
+                    original_image_bytes = io.BytesIO()
+                    st.session_state.original_image.save(
+                        original_image_bytes, format="PNG"
+                    )
+                    original_image_bytes.seek(0)
 
-                    original_image_bytes = io.BytesIO(); st.session_state.original_image.save(original_image_bytes, format="PNG"); original_image_bytes.seek(0)
-                    
-                    source_image_bytes = io.BytesIO(); st.session_state.active_image.save(source_image_bytes, format="PNG"); source_image_bytes.seek(0)
-                    
-                    #mask_bytes = io.BytesIO(); original_mask.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
+                    source_image_bytes = io.BytesIO()
+                    st.session_state.active_image.save(source_image_bytes, format="PNG")
+                    source_image_bytes.seek(0)
 
-                    original_path = upload_image(original_image_bytes, f"original_{CLIENT_ID}.png")
-                    source_path = upload_image(source_image_bytes, f"source_{CLIENT_ID}.png")
-                    mask_path = upload_image(mask_bytes, f"mask_{CLIENT_ID}.png", image_type="mask")
+                    # mask_bytes = io.BytesIO(); original_mask.save(mask_bytes, format="PNG"); mask_bytes.seek(0)
 
-                    images = run_pass(prompt_text, os.path.abspath(source_path), os.path.abspath(mask_path), os.path.abspath(original_path), os.path.abspath("BuildingEditFast.json"))
-                   
+                    original_path = upload_image(
+                        original_image_bytes, f"original_{CLIENT_ID}.png"
+                    )
+                    source_path = upload_image(
+                        source_image_bytes, f"source_{CLIENT_ID}.png"
+                    )
+                    mask_path = upload_image(
+                        mask_bytes, f"mask_{CLIENT_ID}.png", image_type="mask"
+                    )
+
+                    images = run_pass(
+                        prompt_text,
+                        os.path.abspath(source_path),
+                        os.path.abspath(mask_path),
+                        os.path.abspath(original_path),
+                        os.path.abspath("BuildingEditFast.json"),
+                    )
+
                     final_image = None
                     if images:
                         for node_id in images:
                             for image_data in images[node_id]:
-                                final_image = Image.open(io.BytesIO(image_data)); break
-                            if final_image: break
-                    
+                                final_image = Image.open(io.BytesIO(image_data))
+                                break
+                            if final_image:
+                                break
+
                     if final_image:
                         print("Enhance complete")
                         st.success("Enhancement complete!")
                         st.session_state.active_image = final_image
-                        #st.session_state.original_dims = final_image.size
+                        # st.session_state.original_dims = final_image.size
                         active_w, active_h = st.session_state.active_image.size
                         print("Set final image")
                         # Clear the polygons after successful render
-                        st.session_state.sam_polygons = {"objects": [], "background": ""}
-                        
+                        st.session_state.sam_polygons = {
+                            "objects": [],
+                            "background": "",
+                        }
                         st.session_state.canvas_key_counter += 1
                         st.rerun()
                     else:
                         st.error("Render process failed to return an image.")
 
-else:
-    st.info("Upload an image using the sidebar to begin the creative process.")
-
+# else:
+#     st.info("Upload an image using the sidebar to begin the creative process.")
