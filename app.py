@@ -33,7 +33,7 @@ def make_canvas():
         update_streamlit=True,
     )
     dirty = False
-    if poly_mode == "Draw polygons":
+    if canvas_editor == "Draw polygons":
         if editable.json_data:
             fabric_objects = st.session_state.sam_polygons["objects"]
             for obj in editable.json_data["objects"]:
@@ -43,7 +43,7 @@ def make_canvas():
                     dirty = True
 
     # Button to run SAM segmentation
-    if poly_mode == "Magic Wand":
+    if canvas_editor == "Magic Wand":
         user_points = []
         if editable.json_data:
             for obj in editable.json_data["objects"]:
@@ -190,23 +190,30 @@ def draw_mask_polygons_on_image(image, mask_np, color=(246, 250, 6), alpha=0.5):
 
 
 st.set_page_config(layout="wide", page_title="Earth Canvas", page_icon="🌍")
+# CSS
 st.markdown(
     """
     <style>
         @import url('https://fonts.googleapis.com/css?family=Google+Sans:400,500,700');
-        p { font-family: 'Google Sans', sans-serif; }
-        .block-container { padding-top: 2rem; }
+        p, h1, h2, h3 { font-family: 'Google Sans', sans-serif; }
+        .stMainBlockContainer {background-color: #000000}
+        .block-container { padding-top: 2rem; padding-left: 2rem; padding-right: 2rem;}
         [data-testid="stSidebar"] { background-color: #3C4043; }
-        .stButton>button { font-family: 'Google Sans', sans-serif; color: #202124; background-color: #8AB4F8; border: 1px solid #8AB4F8; }
-        h1 { font-family: 'Google Sans', sans-serif; color: #8AB4F8 !important; }
-        h2, h3{ font-family: 'Google Sans', sans-serif; color: #AECBFA !important; }
+        .stButton>button { font-family: 'Google Sans', sans-serif; color: black; background-color: rgb(153 159 185); border: 1px solid #8AB4F8; }
+        h1 {color: #86c7d1; }
+        h2, h3 {color: #73a1a7; font-size: larger;}
         h1, p { text-align: center; }
+        .stContainer {border: #000000; }
+        .stBackground { background-color: #000000; }
+        .stAppViewContainer { background-color: #000000; }
+        [data-testid="stDownloadButton"] > button {
+            width: -webkit-fill-available;
+        }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# --- App State and Constants ---
 CLIENT_ID = str(uuid.uuid4())
 MAX_CANVAS_WIDTH = 800
 
@@ -222,8 +229,7 @@ if "sam_polygons" not in st.session_state:
     st.session_state.sam_polygons = {"objects": [], "background": ""}
 
 
-# --- Callback function to handle file upload ---
-def handle_upload():
+def handle_file_upload():
     if st.session_state.file_uploader is not None:
         uploaded_file = st.session_state.file_uploader
         st.session_state.active_image = Image.open(uploaded_file).convert("RGB")
@@ -237,12 +243,10 @@ def handle_upload():
     st.session_state.original_image = st.session_state.active_image.copy()
 
 
-# --- Streamlit UI ---
 st.title("🌍🎨 Earth Canvas")
-with st.container(border=True):
-    st.markdown(
-        "Transform your generated designs into photorealistic renders in three simple steps!"
-    )
+st.markdown(
+    """:grey[*Transform your generated designs into photorealistic renders in three simple steps!*]"""
+)
 
 try:
     with open("workflow_api.json", "r") as f:
@@ -252,7 +256,7 @@ except:
     st.stop()
 
 
-def fetch_image_bytes(image):
+def convert_for_download(image):
     try:
         if image is None:
             st.warning("No image available to download.")
@@ -266,45 +270,64 @@ def fetch_image_bytes(image):
         st.error(f"An error occurred during download: {e}")
 
 
-# --- Sidebar for Upload and Control ---
-with st.sidebar:
-    st.header("1. Upload Image 🖼️")
+import_col_header, editor_col_header, output_col_header = st.columns([1, 2, 1])
+with import_col_header:
+    st.subheader("1. Upload Image 🖼️")
+with editor_col_header:
+    st.subheader("2. Select area to render on canvas 🖌️")
+with output_col_header:
+    st.subheader("3. Describe vision ✨")
+
+import_col, editor_col, controls_col = st.columns([1, 2, 1])
+with import_col:
     with st.container(border=True):
         st.file_uploader(
-            "Upload new or replacement image.",
+            "Upload new or replacement image:",
             type=["png", "jpg", "jpeg"],
             key="file_uploader",
-            on_change=handle_upload,
+            on_change=handle_file_upload,
+        )
+    if st.session_state.active_image:
+        st.image(
+            st.session_state.original_image,
+            caption="Input image",
+            use_container_width=True,
+        )
+with editor_col:
+    with st.container(border=True):
+        canvas_editor = st.radio(
+            label="Pick selection tool:",
+            options=("Draw polygons", "Magic Wand"),
+            horizontal=True,
+            key="polygon_edit_mode",
+        )
+with controls_col:
+    with st.container(border=True):
+        prompt_text = st.text_area(
+            "Describe the desired change:",
+            placeholder="Aerial view of office buildings in a (neoclassical architectural style), cinematic lighting, 4k, ultra-detailed.",
+            height=125,
         )
 
-        if st.session_state.active_image:
-            st.image(
-                st.session_state.original_image,
-                caption="Input image",
-                use_container_width=True,
+        c1, c2 = st.columns(2)
+        render_button = c1.button(
+            "Render Design", use_container_width=True, type="primary"
+        )
+        if c2.button("Clear Polygons", use_container_width=True):
+            st.session_state.sam_polygons = {"objects": [], "background": ""}
+            st.session_state.canvas_key_counter += 1
+            st.rerun()
+
+        byte_im = convert_for_download(st.session_state.original_image)
+        if byte_im:
+            download_button = st.download_button(
+                label="Download Image",
+                data=byte_im,
+                file_name="rendered_image.jpg",
+                mime="image/jpeg",
             )
 
-    st.markdown("---")
-    # st.info("This front-end connects to a ComfyUI backend for rendering.")
-
-
-# --- Main Image Editor Area ---
 if st.session_state.active_image:
-    col_header_1, col_header_2 = st.columns([2, 1])
-    with col_header_1:
-        st.subheader("2. Highlight the area to render on your canvas 🖌️")
-
-    with col_header_2:
-        st.subheader("3. Describe your vision ✨")
-
-    # Show editable canvas with SAM polygons (if any)
-    poly_mode = st.radio(
-        label="",
-        options=("Draw polygons", "Magic Wand"),
-        horizontal=True,
-        key="polygon_edit_mode",
-    )
-
     orig_w, orig_h = st.session_state.original_image.size
     active_w, active_h = st.session_state.active_image.size
     if active_w > MAX_CANVAS_WIDTH:
@@ -312,11 +335,8 @@ if st.session_state.active_image:
     else:
         disp_w, disp_h = active_w, active_h
 
-    editor_col, controls_col = st.columns([2, 1])
-
     with editor_col:
-        drawing_mode_choice = "polygon" if poly_mode == "Draw polygons" else "point"
-
+        drawing_mode_choice = "polygon" if canvas_editor == "Draw polygons" else "point"
         make_canvas()
 
     original_w, original_h = st.session_state.original_dims
@@ -328,31 +348,7 @@ if st.session_state.active_image:
         canvas_w, canvas_h = original_w, original_h
 
     with controls_col:
-        with st.container(border=True):
-            prompt_text = st.text_area(
-                "Describe the desired change:",
-                placeholder="Aerial view of office buildings in a (neoclassical architectural style), cinematic lighting, 4k, ultra-detailed.",
-                height=125,
-            )
-
-            c1, c2 = st.columns(2)
-            render_button = c1.button(
-                "Render Design", use_container_width=True, type="primary"
-            )
-            if c2.button("Clear All Polygons", use_container_width=True):
-                st.session_state.sam_polygons = {"objects": [], "background": ""}
-                st.session_state.canvas_key_counter += 1
-                st.rerun()
-
-            byte_im = fetch_image_bytes(st.session_state.original_image)
-            download_button = st.download_button(
-                label="Download Image",
-                data=byte_im,
-                file_name="rendered_image.jpg",
-                mime="image/jpeg",
-            )
         if render_button:
-
             # if editable.image_data is not None:
             #    st.session_state.sam_mask_data = editable.image_data.copy()
             # Retrieve alpha channel from the SAM-editable canvas
@@ -439,6 +435,3 @@ if st.session_state.active_image:
                         st.rerun()
                     else:
                         st.error("Render process failed to return an image.")
-
-# else:
-#     st.info("Upload an image using the sidebar to begin the creative process.")
